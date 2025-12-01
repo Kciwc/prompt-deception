@@ -27,6 +27,7 @@ io.on('connection', (socket) => {
 // It looks for a specific environment port, or defaults to 3001
 const PORT = process.env.PORT || 3001;
 
-server.listen(PORT, () => {
+// The "0.0.0.0" is the critical fix for Railway!
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
 });
