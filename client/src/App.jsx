@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import io from "socket.io-client";
 
 // Connect to the backend server running on port 3001
-const socket = io.connect("http://localhost:3001");
+const socket = io.connect("https://prompt-deception-production.up.railway.app");
 
 function App() {
   const [isConnected, setIsConnected] = useState(false);
