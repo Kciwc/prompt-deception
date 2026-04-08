@@ -1,19 +1,29 @@
 {
-  "name": "prompt---deception",
+  "name": "ceyons-trivia",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-"scripts": {
-  "start": "node server.js"
-},
+  "description": "Ceyon's Super Spiffy Non-Googleable Trivia",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "concurrently \"node server/index.js\" \"cd client && npm run dev\"",
+    "build": "cd client && npm install && npm run build",
+    "postinstall": "npm run build && npx prisma generate"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@prisma/client": "^6.9.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "multer": "^1.4.5-lts.2",
+    "sharp": "^0.33.5",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prisma": "^6.9.0"
   }
 }

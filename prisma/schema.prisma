@@ -1,0 +1,58 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Game {
+  id           String        @id @default(cuid())
+  roomCode     String
+  totalRounds  Int
+  startedAt    DateTime
+  endedAt      DateTime      @default(now())
+  hallOfFame   HallOfFame[]
+  trickRecords TrickRecord[]
+  feedbacks    Feedback[]
+}
+
+model HallOfFame {
+  id          String   @id @default(cuid())
+  game        Game     @relation(fields: [gameId], references: [id])
+  gameId      String
+  teamIndex   Int
+  teamName    String
+  finalScore  Int
+  placement   Int
+  playerNames String[]
+}
+
+model TrickRecord {
+  id              String  @id @default(cuid())
+  game            Game    @relation(fields: [gameId], references: [id])
+  gameId          String
+  roundNumber     Int
+  teamIndex       Int
+  bluffText       String
+  votesReceived   Int
+  wasDoublePoints Boolean @default(false)
+}
+
+model Feedback {
+  id          String  @id @default(cuid())
+  game        Game    @relation(fields: [gameId], references: [id])
+  gameId      String
+  roundNumber Int
+  playerName  String
+  thumbsUp    Boolean
+}
+
+model RoundContent {
+  id         String   @id @default(cuid())
+  imageUrl   String
+  realPrompt String
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
