@@ -56,3 +56,27 @@ model RoundContent {
   used       Boolean  @default(false)
   createdAt  DateTime @default(now())
 }
+
+model GeneratedContent {
+  id            String   @id @default(cuid())
+  prompt        String
+  imageUrl      String?
+  status        String   @default("pending") // pending, approved, discarded
+  discardReason String?
+  category      String?
+  batchId       String?
+  createdAt     DateTime @default(now())
+}
+
+model DiversityCategory {
+  id    String @id @default(cuid())
+  name  String @unique
+  count Int    @default(0)
+}
+
+model BadFence {
+  id        String   @id @default(cuid())
+  prompt    String
+  reason    String
+  createdAt DateTime @default(now())
+}

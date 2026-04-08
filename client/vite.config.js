@@ -50,7 +50,10 @@ export default defineConfig({
         ws: true,
       },
       '/uploads': 'http://localhost:3001',
-      '/admin': 'http://localhost:3001',
+      '/admin': {
+        target: 'http://localhost:3001',
+        timeout: 120000,
+      },
       '/health': 'http://localhost:3001',
     },
   },

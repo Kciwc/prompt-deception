@@ -9,6 +9,7 @@ const path = require('path');
 const { PORT } = require('./config');
 const healthRoutes = require('./routes/health');
 const adminRoutes = require('./routes/admin');
+const generateRoutes = require('./routes/generate');
 const { setupSocketHandlers } = require('./socket/handler');
 
 const app = express();
@@ -21,6 +22,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // API routes
 app.use(healthRoutes);
 app.use(adminRoutes);
+app.use(generateRoutes);
 
 // Serve built client (React SPA)
 const clientDist = path.join(__dirname, '..', 'client', 'dist');

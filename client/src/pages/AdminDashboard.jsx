@@ -5,13 +5,14 @@ import {
   TextField,
   Button,
   Paper,
-  IconButton,
   Alert,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
+  Tab,
+  Tabs,
 } from '@mui/material';
+import GenerateTab from '../components/admin/GenerateTab';
 
 export default function AdminDashboard() {
   const [password, setPassword] = useState('');
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
   const [realPrompt, setRealPrompt] = useState('');
   const [status, setStatus] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [tab, setTab] = useState(0);
 
   const headers = { 'x-admin-password': password };
 
@@ -119,7 +121,7 @@ export default function AdminDashboard() {
   const used = rounds.filter((r) => r.used).length;
 
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ maxWidth: 1000, mx: 'auto', p: 3, minHeight: '100vh', bgcolor: 'background.default' }}>
       <Typography variant="h4" gutterBottom fontWeight={700}>
         Admin Dashboard
       </Typography>
@@ -130,60 +132,73 @@ export default function AdminDashboard() {
         </Alert>
       )}
 
-      {/* Upload section */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>Upload Round</Typography>
-        <Box sx={{ mb: 2 }}>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setImage(e.target.files[0])}
-          />
-        </Box>
-        <TextField
-          fullWidth
-          label="Real AI Prompt"
-          value={realPrompt}
-          onChange={(e) => setRealPrompt(e.target.value)}
-          sx={{ mb: 2 }}
-          helperText="The actual prompt used to generate the image"
-        />
-        <Button variant="contained" onClick={upload} disabled={uploading}>
-          {uploading ? 'Uploading...' : 'Upload'}
-        </Button>
-      </Paper>
+      <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ mb: 3 }}>
+        <Tab label="Content Library" />
+        <Tab label="AI Generator" />
+      </Tabs>
 
-      {/* Stats */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>Round Content</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {unused} unused / {used} used / {rounds.length} total
-        </Typography>
-        <Button size="small" variant="outlined" onClick={resetUsed} sx={{ mb: 2 }}>
-          Reset All to Unused
-        </Button>
+      {/* Tab 0: Content Library (existing functionality) */}
+      {tab === 0 && (
+        <>
+          {/* Upload section */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>Manual Upload</Typography>
+            <Box sx={{ mb: 2 }}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImage(e.target.files[0])}
+              />
+            </Box>
+            <TextField
+              fullWidth
+              label="Real AI Prompt"
+              value={realPrompt}
+              onChange={(e) => setRealPrompt(e.target.value)}
+              sx={{ mb: 2 }}
+              helperText="The actual prompt used to generate the image"
+            />
+            <Button variant="contained" onClick={upload} disabled={uploading}>
+              {uploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          </Paper>
 
-        <List>
-          {rounds.map((round) => (
-            <ListItem key={round.id} divider>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                <img
-                  src={round.imageUrl}
-                  alt="round"
-                  style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }}
-                />
-                <ListItemText
-                  primary={round.realPrompt}
-                  secondary={`${round.used ? 'Used' : 'Unused'} — ${new Date(round.createdAt).toLocaleDateString()}`}
-                />
-                <Button size="small" color="error" onClick={() => deleteRound(round.id)}>
-                  Delete
-                </Button>
-              </Box>
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
+          {/* Stats */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Typography variant="h6" gutterBottom>Round Content</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {unused} unused / {used} used / {rounds.length} total
+            </Typography>
+            <Button size="small" variant="outlined" onClick={resetUsed} sx={{ mb: 2 }}>
+              Reset All to Unused
+            </Button>
+
+            <List>
+              {rounds.map((round) => (
+                <ListItem key={round.id} divider>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                    <img
+                      src={round.imageUrl}
+                      alt="round"
+                      style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8 }}
+                    />
+                    <ListItemText
+                      primary={round.realPrompt}
+                      secondary={`${round.used ? 'Used' : 'Unused'} — ${new Date(round.createdAt).toLocaleDateString()}`}
+                    />
+                    <Button size="small" color="error" onClick={() => deleteRound(round.id)}>
+                      Delete
+                    </Button>
+                  </Box>
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        </>
+      )}
+
+      {/* Tab 1: AI Generator */}
+      {tab === 1 && <GenerateTab headers={headers} />}
     </Box>
   );
 }
