@@ -4,10 +4,10 @@
   "description": "Ceyon's Super Spiffy Non-Googleable Trivia",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "npx prisma generate && npx prisma db push && node server/index.js",
     "dev": "concurrently \"node server/index.js\" \"cd client && npm run dev\"",
     "build": "cd client && npm install && npm run build",
-    "postinstall": "npm run build && npx prisma generate"
+    "postinstall": "npm run build"
   },
   "keywords": [],
   "author": "",
