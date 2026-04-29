@@ -75,10 +75,33 @@ export default function TVHost() {
   }, [code, attached]);
 
   const [showPairing, setShowPairing] = useState(false);
+  // playerId of the player whose action menu is open, or null
+  const [openMenuFor, setOpenMenuFor] = useState(null);
+
   function kickPlayer(playerId, name) {
     if (!confirm(`Kick ${name}?`)) return;
     socket.emit('host:kick-player', { playerId });
+    setOpenMenuFor(null);
   }
+  function movePlayer(playerId, teamSlot) {
+    socket.emit('host:move-player', { playerId, teamSlot });
+    setOpenMenuFor(null);
+  }
+
+  // Close menu on Escape or click outside.
+  useEffect(() => {
+    if (!openMenuFor) return;
+    const onKey = (e) => { if (e.key === 'Escape') setOpenMenuFor(null); };
+    const onClickAway = (e) => {
+      if (!e.target.closest?.('.player-pill, .player-menu')) setOpenMenuFor(null);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('click', onClickAway);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('click', onClickAway);
+    };
+  }, [openMenuFor]);
 
   if (err) return <div className="tv-shell error"><h1>{err}</h1></div>;
   if (!attached || !room) return <div className="tv-shell"><TVSkeleton /></div>;
@@ -117,14 +140,42 @@ export default function TVHost() {
                   <ul>
                     {players.map((p) => (
                       <li key={p.id} className={p.ready ? 'ready' : ''}>
-                        <span>{p.name}{p.ready && ' ✓'}</span>
                         <button
-                          className="kick-btn"
-                          onClick={() => kickPlayer(p.id, p.name)}
-                          title="Kick"
+                          type="button"
+                          className="player-pill"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuFor(openMenuFor === p.id ? null : p.id);
+                          }}
+                          title="Manage player"
                         >
-                          <XIcon size={14} strokeWidth={3} />
+                          <span>{p.name}{p.ready && ' ✓'}</span>
                         </button>
+                        {openMenuFor === p.id && (
+                          <div className="player-menu" onClick={(e) => e.stopPropagation()}>
+                            <div className="player-menu-label">Move to:</div>
+                            <div className="player-menu-row">
+                              {room.teams.map((other) => (
+                                <button
+                                  key={other.slot}
+                                  type="button"
+                                  className={`move-btn move-${other.color}`}
+                                  disabled={other.slot === p.teamSlot}
+                                  onClick={() => movePlayer(p.id, other.slot)}
+                                >
+                                  {other.name}
+                                </button>
+                              ))}
+                            </div>
+                            <button
+                              type="button"
+                              className="kick-action"
+                              onClick={() => kickPlayer(p.id, p.name)}
+                            >
+                              <XIcon size={14} strokeWidth={3} /> Kick
+                            </button>
+                          </div>
+                        )}
                       </li>
                     ))}
                     {players.length === 0 && <li className="empty">— waiting —</li>}

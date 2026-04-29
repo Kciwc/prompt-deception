@@ -70,6 +70,17 @@ function attachHostHandlers(io, socket) {
     });
   });
 
+  socket.on('host:move-player', ({ playerId, teamSlot } = {}, ack) => {
+    withHost(ack, (room) => {
+      if (typeof playerId !== 'string') return ack?.({ ok: false, error: 'bad_player_id' });
+      if (![1, 2, 3].includes(teamSlot)) return ack?.({ ok: false, error: 'bad_team' });
+      const ok = room.switchTeam(playerId, teamSlot);
+      if (!ok) return ack?.({ ok: false, error: 'switch_rejected' });
+      broadcastRoomState(io, room);
+      ack?.({ ok: true });
+    });
+  });
+
   socket.on('host:kick-player', ({ playerId } = {}, ack) => {
     withHost(ack, (room) => {
       if (typeof playerId !== 'string') return ack?.({ ok: false, error: 'bad_player_id' });

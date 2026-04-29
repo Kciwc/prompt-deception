@@ -295,20 +295,88 @@
 }
 
 .tv-team li {
-  display: flex !important;
-  justify-content: space-between !important;
+  position: relative;
+  padding: 0 !important;
+}
+
+.player-pill {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.player-pill:hover { background: rgba(255, 255, 255, 0.14); transform: none; box-shadow: none; }
+.tv-team li.ready .player-pill { background: rgba(46, 204, 113, 0.22); }
+
+.player-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.4rem;
+  background: var(--bg-1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.6rem;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  animation: menu-pop 160ms ease-out;
+}
+@keyframes menu-pop {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.player-menu-label {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.player-menu-row { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.move-btn {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border: 2px solid transparent;
+  font-weight: 600;
+}
+.move-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+  transform: none;
+  box-shadow: none;
+}
+.move-btn:disabled { opacity: 0.3; cursor: default; }
+.move-btn.move-cyan    { border-color: var(--team-1); }
+.move-btn.move-magenta { border-color: var(--team-2); }
+.move-btn.move-amber   { border-color: var(--team-3); }
+
+.kick-action {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-}
-.kick-btn {
-  background: rgba(255, 77, 109, 0.18);
+  justify-content: center;
+  gap: 0.4em;
+  background: rgba(255, 77, 109, 0.16);
   color: var(--danger);
-  font-size: 0.9rem;
-  padding: 0.05em 0.55em;
+  font-size: 0.85rem;
+  padding: 0.4rem;
   border-radius: 8px;
-  line-height: 1;
 }
-.kick-btn:hover { background: rgba(255, 77, 109, 0.3); transform: none; box-shadow: none; }
+.kick-action:hover { background: rgba(255, 77, 109, 0.28); transform: none; box-shadow: none; }
 
 .pair-btn {
   background: rgba(255, 255, 255, 0.12);
