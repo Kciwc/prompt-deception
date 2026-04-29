@@ -3,9 +3,10 @@ const { TEAMS } = require('../config');
 // In-memory store: Map<roomCode, GameState>
 const games = new Map();
 
-function createGame(roomCode, rounds, tvSocketId) {
+function createGame(roomCode, rounds, tvSocketId, lobbyName) {
   const state = {
     roomCode,
+    lobbyName: lobbyName || `Game ${roomCode}`,
     phase: 0,
     paused: false,
     roundIndex: 0,
@@ -136,6 +137,7 @@ function serializeForClient(game) {
 
   return {
     roomCode: game.roomCode,
+    lobbyName: game.lobbyName,
     phase: game.phase,
     paused: game.paused,
     roundIndex: game.roundIndex,

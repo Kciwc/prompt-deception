@@ -11,6 +11,7 @@ const { DEBOUNCE_MS } = require('../config');
 const { registerLobbyHandlers } = require('./lobby');
 const { registerRoundHandlers, startPhase1, startPhase2, startPhase3 } = require('./rounds');
 const { registerVotingHandlers } = require('./voting');
+const { registerLobbyBrowserHandlers, broadcastLobbies } = require('./lobbyBrowser');
 const prisma = require('../db');
 
 function setupSocketHandlers(io) {
@@ -21,11 +22,12 @@ function setupSocketHandlers(io) {
     registerLobbyHandlers(io, socket);
     registerRoundHandlers(io, socket);
     registerVotingHandlers(io, socket);
+    registerLobbyBrowserHandlers(io, socket);
 
     // ─── TV Screen Events ───
 
     // TV creates a new game room
-    socket.on('tv:createRoom', async () => {
+    socket.on('tv:createRoom', async ({ lobbyName } = {}) => {
       const roomCode = generateRoomCode();
 
       // Load unused round content from DB
@@ -47,13 +49,15 @@ function setupSocketHandlers(io) {
         return;
       }
 
-      const game = createGame(roomCode, rounds, socket.id);
+      const game = createGame(roomCode, rounds, socket.id, lobbyName);
       socket.join(`game:${roomCode}`);
       socket.join(`game:${roomCode}:tv`);
       socket.data.roomCode = roomCode;
 
       socket.emit('roomCreated', { roomCode });
       socket.emit('gameState', serializeForClient(game));
+
+      broadcastLobbies(io);
     });
 
     // TV joins an existing room (reconnect)
@@ -71,7 +75,6 @@ function setupSocketHandlers(io) {
 
       socket.emit('gameState', serializeForClient(game));
 
-      // If game was auto-paused due to TV disconnect, notify
       if (game.paused) {
         socket.emit('paused', { paused: true, reason: 'Game is paused. Resume when ready.' });
       }
@@ -86,7 +89,6 @@ function setupSocketHandlers(io) {
       if (!game || socket.id !== game.tvSocketId) return;
       if (game.phase !== 0) return;
 
-      // Check all players are ready
       let totalPlayers = 0;
       let readyCount = 0;
       for (const p of game.players.values()) {
@@ -109,6 +111,7 @@ function setupSocketHandlers(io) {
       }
 
       startPhase1(io, game);
+      broadcastLobbies(io);
     });
 
     socket.on('host:pause', () => {
@@ -172,6 +175,7 @@ function setupSocketHandlers(io) {
       io.to(`game:${game.roomCode}`).emit('hostAction', {
         action: `${target.name} was kicked!`,
       });
+      broadcastLobbies(io);
     });
 
     socket.on('host:trashRound', () => {
@@ -181,14 +185,10 @@ function setupSocketHandlers(io) {
 
       clearTimer(game);
 
-      // Skip to next round without changing scores or round count
-      // Don't increment roundIndex — this round doesn't count
-      // Just restart Phase 1 with the same round index but next image
       game.rounds.splice(game.roundIndex, 1);
       game.totalRounds = game.rounds.length;
 
       if (game.roundIndex >= game.totalRounds) {
-        // No more rounds
         const { startPhase5 } = require('./reveal');
         startPhase5(io, game);
         return;

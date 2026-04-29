@@ -6,6 +6,7 @@ const {
   getConnectedPlayers,
   getTeamPlayers,
 } = require('../game/state');
+const { broadcastLobbies } = require('./lobbyBrowser');
 const { DEBOUNCE_MS } = require('../config');
 
 function registerLobbyHandlers(io, socket) {
@@ -39,6 +40,7 @@ function registerLobbyHandlers(io, socket) {
     socket.data.roomCode = roomCode;
 
     io.to(`game:${roomCode}`).emit('gameState', serializeForClient(game));
+    broadcastLobbies(io);
   });
 
   // Player switches teams
@@ -118,8 +120,8 @@ function registerLobbyHandlers(io, socket) {
     if (player) {
       player.connected = false;
 
-      // Check if team is now empty — handled by rounds.js during phase transitions
       io.to(`game:${game.roomCode}`).emit('gameState', serializeForClient(game));
+      broadcastLobbies(io);
     }
 
     // If TV disconnects, auto-pause before next phase

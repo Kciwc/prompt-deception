@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import socket from '../socket';
@@ -10,6 +10,42 @@ import RevealSequence from '../components/tv/RevealSequence';
 import Podium from '../components/tv/Podium';
 import Confetti from '../components/tv/Confetti';
 import ThemeToggle from '../components/tv/ThemeToggle';
+import TeamBuckets from '../components/tv/TeamBuckets';
+
+const TEAM_HEX = ['#00e5ff', '#ff00e5', '#ffab00'];
+
+// Floating particles for lobby ambiance
+function FloatingParticles() {
+  const particles = useMemo(() =>
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 15}s`,
+      duration: `${12 + Math.random() * 10}s`,
+      color: ['#00e5ff', '#ff00e5', '#ffab00'][i % 3],
+      size: 2 + Math.random() * 4,
+    })), []);
+
+  return (
+    <>
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="floating-particle"
+          style={{
+            left: p.left,
+            animationDelay: p.delay,
+            animationDuration: p.duration,
+            background: p.color,
+            width: p.size,
+            height: p.size,
+            boxShadow: `0 0 ${p.size * 3}px ${p.color}`,
+          }}
+        />
+      ))}
+    </>
+  );
+}
 
 export default function TVScreen({ theme, toggleTheme }) {
   const {
@@ -27,9 +63,12 @@ export default function TVScreen({ theme, toggleTheme }) {
 
   const [roomCode, setRoomCode] = useState(null);
 
-  // Create room on mount
+  // Create room on mount, pass lobby name from URL
   useEffect(() => {
-    socket.emit('tv:createRoom');
+    const params = new URLSearchParams(window.location.search);
+    const lobbyName = params.get('name') || undefined;
+
+    socket.emit('tv:createRoom', { lobbyName });
 
     socket.on('roomCreated', ({ roomCode: code }) => {
       setRoomCode(code);
@@ -59,65 +98,102 @@ export default function TVScreen({ theme, toggleTheme }) {
 
   return (
     <Box className="tv-screen" sx={{ bgcolor: 'background.default', color: 'text.primary' }}>
+      {/* Blob background */}
+      <div className="blob-bg">
+        <div className="blob-amber" />
+      </div>
+
       {/* Theme toggle */}
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
 
-      {/* Room code + QR code display (lobby) */}
+      {/* ═══ LOBBY PHASE ═══ */}
       {gameState?.phase === 0 && roomCode && (
-        <Box sx={{ position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 10 }}>
-          <Typography variant="h6" color="text.secondary">Scan to join</Typography>
-          <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 3, display: 'inline-block', mt: 1, mb: 2 }}>
-            <QRCodeSVG
-              value={`${window.location.origin}/?room=${roomCode}`}
-              size={180}
-              level="M"
-              includeMargin={false}
-            />
-          </Box>
-          <Typography variant="body2" color="text.secondary">or enter code</Typography>
-          <Typography variant="h2" fontWeight={800} sx={{ letterSpacing: 8, color: 'primary.main' }}>
-            {roomCode}
-          </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-            {gameState.players?.length || 0} player{gameState.players?.length !== 1 ? 's' : ''} connected
-          </Typography>
-          {/* Ready progress */}
-          {gameState.players?.length > 0 && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {gameState.players.filter((p) => p.ready).length} / {gameState.players.length} ready
-              </Typography>
-              <Box sx={{ width: 300, height: 8, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 4, mt: 1, mx: 'auto', overflow: 'hidden' }}>
-                <Box
-                  sx={{
-                    width: `${(gameState.players.filter((p) => p.ready).length / Math.max(gameState.players.length, 1)) * 100}%`,
-                    height: '100%',
-                    bgcolor: 'primary.main',
-                    borderRadius: 4,
-                    transition: 'width 0.3s ease',
-                  }}
+        <>
+          <FloatingParticles />
+
+          <Box sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            pt: 5,
+            zIndex: 10,
+            overflow: 'auto',
+          }}>
+            {/* Title */}
+            <Typography
+              variant="h2"
+              className="shimmer-text"
+              sx={{ mb: 0.5, fontSize: '2.2rem' }}
+            >
+              {gameState.lobbyName || `Game ${roomCode}`}
+            </Typography>
+
+            {/* QR + Code side by side */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 4, mt: 3, mb: 4 }}>
+              <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 3, boxShadow: '0 0 40px rgba(0,229,255,0.2)' }}>
+                <QRCodeSVG
+                  value={`${window.location.origin}/?room=${roomCode}`}
+                  size={140}
+                  level="M"
+                  includeMargin={false}
                 />
               </Box>
-            </Box>
-          )}
-          {/* Team roster */}
-          <Box sx={{ display: 'flex', gap: 4, mt: 4, justifyContent: 'center' }}>
-            {gameState.teams?.map((team) => (
-              <Box key={team.index} sx={{ textAlign: 'center', minWidth: 150 }}>
-                <Typography variant="h6" sx={{ color: ['#00e5ff', '#ff00e5', '#ffab00'][team.index] }}>
-                  {team.finalName}
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  Scan or enter code
                 </Typography>
-                {gameState.players
-                  .filter((p) => p.teamIndex === team.index)
-                  .map((p) => (
-                    <Typography key={p.socketId} variant="body2" sx={{ opacity: p.ready ? 1 : 0.5 }}>
-                      {p.name} {p.ready ? '✓' : ''}
-                    </Typography>
-                  ))}
+                <Typography
+                  variant="h1"
+                  sx={{
+                    letterSpacing: 10,
+                    color: 'primary.main',
+                    textShadow: '0 0 30px rgba(0,229,255,0.5)',
+                    fontSize: '3.5rem',
+                  }}
+                >
+                  {roomCode}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {gameState.players?.length || 0} player{gameState.players?.length !== 1 ? 's' : ''} connected
+                </Typography>
               </Box>
-            ))}
+            </Box>
+
+            {/* Ready progress bar */}
+            {gameState.players?.length > 0 && (() => {
+              const readyCount = gameState.players.filter((p) => p.ready).length;
+              const total = gameState.players.length;
+              return (
+                <Box sx={{ mb: 4, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    {readyCount} / {total} ready
+                  </Typography>
+                  <Box sx={{ width: 400, height: 6, bgcolor: 'rgba(255,255,255,0.08)', borderRadius: 3, mx: 'auto', overflow: 'hidden' }}>
+                    <Box
+                      sx={{
+                        width: `${(readyCount / Math.max(total, 1)) * 100}%`,
+                        height: '100%',
+                        background: readyCount === total
+                          ? 'linear-gradient(90deg, #00e676, #69f0ae)'
+                          : 'linear-gradient(90deg, #00e5ff, #ff00e5)',
+                        borderRadius: 3,
+                        transition: 'width 0.4s ease, background 0.4s ease',
+                        boxShadow: readyCount === total
+                          ? '0 0 20px rgba(0,230,118,0.5)'
+                          : '0 0 20px rgba(0,229,255,0.3)',
+                      }}
+                    />
+                  </Box>
+                </Box>
+              );
+            })()}
+
+            {/* Team Buckets */}
+            <TeamBuckets teams={gameState.teams} players={gameState.players} />
           </Box>
-        </Box>
+        </>
       )}
 
       {/* Current AI image (always visible during active game) */}
@@ -130,8 +206,11 @@ export default function TVScreen({ theme, toggleTheme }) {
         <Box sx={{ position: 'absolute', top: 20, right: 40, zIndex: 10 }}>
           <Typography
             variant="h2"
-            fontWeight={800}
-            sx={{ color: timer <= 10 ? 'error.main' : 'text.primary', transition: 'color 0.3s' }}
+            sx={{
+              color: timer <= 10 ? 'error.main' : 'text.primary',
+              transition: 'color 0.3s',
+              textShadow: timer <= 10 ? '0 0 20px rgba(255,0,0,0.5)' : 'none',
+            }}
           >
             {timer}
           </Typography>
@@ -160,9 +239,20 @@ export default function TVScreen({ theme, toggleTheme }) {
           {gameState.mainVoteOptions.map((opt, i) => (
             <Box
               key={i}
-              sx={{ bgcolor: 'background.paper', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 2, p: 2, mb: 1.5, textAlign: 'center' }}
+              className="card-enter"
+              sx={{
+                bgcolor: 'rgba(18,18,42,0.9)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 3,
+                p: 2.5,
+                mb: 1.5,
+                textAlign: 'center',
+                backdropFilter: 'blur(10px)',
+                animationDelay: `${i * 0.15}s`,
+                opacity: 0,
+              }}
             >
-              <Typography variant="h6">
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 {['◆', '●', '▲', '■'][i % 4]} {opt.text}
               </Typography>
             </Box>
@@ -185,15 +275,21 @@ export default function TVScreen({ theme, toggleTheme }) {
 
       {/* Paused overlay */}
       {paused && (
-        <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500 }}>
-          <Typography variant="h1" color="white" fontWeight={800}>PAUSED</Typography>
+        <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(6,6,15,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500, backdropFilter: 'blur(8px)' }}>
+          <Typography variant="h1" sx={{ color: 'white', textShadow: '0 0 40px rgba(0,229,255,0.5)' }}>PAUSED</Typography>
         </Box>
       )}
 
       {/* Host action notification */}
       {hostAction && (
-        <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', bgcolor: 'primary.main', color: 'black', px: 4, py: 2, borderRadius: 3, zIndex: 400 }}>
-          <Typography variant="h4" fontWeight={700}>{hostAction}</Typography>
+        <Box sx={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'linear-gradient(135deg, #00e5ff, #ff00e5)',
+          color: 'white', px: 5, py: 2.5, borderRadius: 4, zIndex: 400,
+          boxShadow: '0 10px 40px rgba(0,229,255,0.3)',
+        }}>
+          <Typography variant="h4">{hostAction}</Typography>
         </Box>
       )}
 
@@ -221,11 +317,17 @@ export default function TVScreen({ theme, toggleTheme }) {
       {gameState && gameState.phase >= 1 && (
         <Box sx={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
           {gameState.teams.map((team) => (
-            <Box key={team.index} sx={{ textAlign: 'center', mb: 2 }}>
-              <Typography variant="body2" sx={{ color: ['#00e5ff', '#ff00e5', '#ffab00'][team.index] }}>
+            <Box key={team.index} sx={{ textAlign: 'center', mb: 3 }}>
+              <Typography variant="body2" sx={{ color: TEAM_HEX[team.index], fontWeight: 600 }}>
                 {team.finalName}
               </Typography>
-              <Typography variant="h4" fontWeight={800} sx={{ color: ['#00e5ff', '#ff00e5', '#ffab00'][team.index] }}>
+              <Typography
+                variant="h3"
+                sx={{
+                  color: TEAM_HEX[team.index],
+                  textShadow: `0 0 20px ${TEAM_HEX[team.index]}60`,
+                }}
+              >
                 {team.score}
               </Typography>
             </Box>

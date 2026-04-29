@@ -9,9 +9,10 @@
 html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* Prevent horizontal scroll / swipe-back issues */
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
+  background: #06060f;
 }
 
 /* Mobile view padding */
@@ -22,6 +23,8 @@ html, body {
   padding-right: calc(var(--sar) + 8px);
   min-height: 100dvh;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 /* TV screen — full 16:9 */
@@ -48,11 +51,19 @@ html, body {
   pointer-events: none;
 }
 
-/* Team background colors */
-.team-bg-cyan { background: linear-gradient(135deg, #0a1a2e 0%, #001f3f 100%); }
-.team-bg-magenta { background: linear-gradient(135deg, #1a0a2e 0%, #2a0020 100%); }
-.team-bg-amber { background: linear-gradient(135deg, #1a1400 0%, #2a1f00 100%); }
-.team-bg-spectator { background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); }
+/* Team background colors — animated gradients */
+.team-bg-cyan {
+  background: linear-gradient(135deg, #060615 0%, #001a2e 40%, #002233 100%);
+}
+.team-bg-magenta {
+  background: linear-gradient(135deg, #0f0615 0%, #1a0028 40%, #220030 100%);
+}
+.team-bg-amber {
+  background: linear-gradient(135deg, #0f0d06 0%, #1a1400 40%, #221a00 100%);
+}
+.team-bg-spectator {
+  background: linear-gradient(135deg, #0a0a10 0%, #06060f 100%);
+}
 
 /* Countdown bar pinned to top */
 .countdown-bar {
