@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const { Server } = require('socket.io');
 
 const config = require('./config');
@@ -15,12 +16,32 @@ app.use(express.json({ limit: '64kb' }));
 
 app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime(), storage: storage.kind }));
 
-// Local-storage mode serves /uploads/* statically. R2 mode delegates to
-// the public R2 URL — no static mount needed.
 if (storage.kind === 'local') {
   app.use('/uploads', express.static(storage.uploadsDir, { maxAge: '7d' }));
 }
 app.use('/admin', adminRouter);
+
+// Serve the built client app from the same origin (Railway hosts both).
+// In local dev the client runs on its own Vite server, so client/dist may
+// not exist — guard with a file check.
+const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
+const CLIENT_INDEX = path.join(CLIENT_DIST, 'index.html');
+const clientBuilt = fs.existsSync(CLIENT_INDEX);
+
+if (clientBuilt) {
+  app.use(express.static(CLIENT_DIST, { maxAge: '1d', index: false }));
+  // SPA fallback for React Router. Last middleware — only catches GETs
+  // that asked for HTML and didn't match anything above.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET') return next();
+    const accepts = req.headers.accept ?? '';
+    if (!accepts.includes('text/html')) return next();
+    res.sendFile(CLIENT_INDEX);
+  });
+  console.log('[server] serving client from', CLIENT_DIST);
+} else {
+  console.log('[server] client/dist not found — client served separately (dev mode)');
+}
 
 const server = http.createServer(app);
 
