@@ -6,6 +6,8 @@ import { useRoomState } from '../hooks/useRoomState';
 import { QRBlock } from '../components/QRBlock';
 import { PhaseTimer } from '../components/PhaseTimer';
 import { HostControls } from '../components/HostControls';
+import { RevealPanel } from '../components/RevealPanel';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { uploadUrl } from '../lib/api';
 import './TVHost.css';
 
@@ -24,6 +26,8 @@ export default function TVHost() {
   const [attached, setAttached] = useState(false);
   const [err, setErr] = useState('');
   const room = useRoomState();
+
+  useWakeLock(attached);
 
   useEffect(() => {
     if (!code) {
@@ -129,9 +133,7 @@ export default function TVHost() {
               {room.phase === 3 && (
                 <CandidatesPanel room={room} hideReal />
               )}
-              {room.phase === 4 && (
-                <RevealPanel room={room} />
-              )}
+              {room.phase === 4 && <RevealPanel room={room} />}
             </div>
           </div>
 
@@ -201,48 +203,6 @@ function CandidatesPanel({ room }) {
           </li>
         ))}
       </ol>
-    </div>
-  );
-}
-
-function RevealPanel({ room }) {
-  const round = room.currentRound;
-  if (!round?.candidates || !round?.reveal) return null;
-  const { voteByCandidate, scoreDelta } = round.reveal;
-  return (
-    <div className="tv-reveal">
-      <h3>Reveal</h3>
-      <ol>
-        {round.candidates.map((c) => {
-          const isReal = c.id === 'real';
-          const votes = voteByCandidate?.[c.id] ?? 0;
-          return (
-            <li key={c.id} className={isReal ? 'is-real' : ''}>
-              <span className="text">"{c.text}"</span>
-              <span className="meta">
-                {isReal && <span className="real-tag">REAL</span>}
-                <span className="vc">{votes} vote{votes === 1 ? '' : 's'}</span>
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-      {scoreDelta && (
-        <div className="round-score">
-          <h4>This round</h4>
-          <ul>
-            {room.teams.map((t) => {
-              const d = scoreDelta.perTeam?.[t.slot] ?? 0;
-              return (
-                <li key={t.slot} className={`tv-team-${t.color}`}>
-                  <span>{t.name}</span>
-                  <span>+{d}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

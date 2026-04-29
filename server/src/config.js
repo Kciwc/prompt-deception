@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const required = (name) => {
   const v = process.env[name];
@@ -25,5 +26,13 @@ module.exports = {
     secretAccessKey: optional('R2_SECRET_ACCESS_KEY', null),
     bucket: optional('R2_BUCKET', 'prompt-deception-images'),
     publicUrl: optional('R2_PUBLIC_URL', null),
+  },
+  get isR2Configured() {
+    return !!(
+      this.r2.endpoint &&
+      this.r2.accessKeyId &&
+      this.r2.secretAccessKey &&
+      this.r2.publicUrl
+    );
   },
 };

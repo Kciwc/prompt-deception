@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { socket } from '../lib/socket';
+import { Confetti } from './Confetti';
 import './PhaseInputs.css';
 
 const MIN_BLUFF = 5;
@@ -180,10 +181,24 @@ export function Phase3MainVote({ round, myTeamSlot }) {
 }
 
 // ──────────────────────────────────────────────────────────
-// Phase 4: thumbs up/down on the round
+// Phase 4: thumbs up/down on the round (+ confetti if I guessed right)
 // ──────────────────────────────────────────────────────────
-export function Phase4Feedback({ round }) {
+export function Phase4Feedback({ round, room }) {
   const [submitted, setSubmitted] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+
+  // Mirror the TV's reveal cadence — fire confetti when the real is revealed.
+  const elapsedFrac = room?.phaseStartMs && room?.phaseDurationMs
+    ? Math.min(1, Math.max(0, (now - room.phaseStartMs) / room.phaseDurationMs))
+    : 1;
+  const realRevealed = elapsedFrac >= 0.75;
+  const guessedReal = round.myMainVote === 'real';
+  const fireConfetti = realRevealed && guessedReal;
 
   function send(thumbs) {
     setSubmitted(true);
@@ -192,8 +207,15 @@ export function Phase4Feedback({ round }) {
 
   return (
     <section className="phase-input">
-      <h2>Watch the screen</h2>
-      <p className="hint">Reveal in progress on the TV.</p>
+      <Confetti firing={fireConfetti} key={`p-confetti-${room.currentRoundIdx}-${fireConfetti}`} count={50} />
+      <h2>{realRevealed ? (guessedReal ? 'Nice — you nailed it!' : 'Watch the screen') : 'Reveal time'}</h2>
+      <p className="hint">
+        {realRevealed
+          ? guessedReal
+            ? 'You picked the real prompt. +2 for your team.'
+            : "You missed it. Reveal continues on the TV."
+          : 'Reveal in progress on the TV.'}
+      </p>
       <div className="thumbs-row">
         <button className="thumb up" disabled={submitted} onClick={() => send('up')}>
           👍 Good round

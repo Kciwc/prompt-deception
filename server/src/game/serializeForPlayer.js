@@ -35,6 +35,8 @@ function serializeForPlayer(room, audience) {
     isPublic: room.isPublic,
     status: room.status,
     phase: room.phase,
+    phaseStartMs: room.phaseStartMs ?? null,
+    phaseDurationMs: room.phaseDurationMs ?? null,
     phaseDeadlineMs: room.phaseDeadlineMs,
     paused: room.paused,
     pausedRemainingMs: room.pausedRemainingMs ?? null,

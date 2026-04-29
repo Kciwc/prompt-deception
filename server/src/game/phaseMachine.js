@@ -163,7 +163,9 @@ class PhaseMachine {
     this.room.paused = false;
     this.room.pausedRemainingMs = null;
     const dur = durationFor(phase);
-    this.room.phaseDeadlineMs = Date.now() + dur;
+    this.room.phaseStartMs = Date.now();
+    this.room.phaseDurationMs = dur;
+    this.room.phaseDeadlineMs = this.room.phaseStartMs + dur;
     this._scheduleAdvance(dur);
     this._broadcast();
   }

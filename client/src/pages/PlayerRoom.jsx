@@ -11,6 +11,8 @@ import {
   Phase3MainVote,
   Phase4Feedback,
 } from '../components/PhaseInputs';
+import { useWakeLock } from '../hooks/useWakeLock';
+import { useBeforeUnload } from '../hooks/useBeforeUnload';
 import { uploadUrl } from '../lib/api';
 import './PlayerRoom.css';
 
@@ -35,6 +37,10 @@ export default function PlayerRoom() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [kicked, setKicked] = useState(false);
+
+  // Keep phone awake during active play. Warn before accidental swipe-back.
+  useWakeLock(joined && room?.status === 'playing');
+  useBeforeUnload(joined && room?.status === 'playing');
 
   function submitName(e) {
     e.preventDefault();
@@ -198,7 +204,7 @@ function PlayingView({ room, me }) {
       {room.phase === 1 && <Phase1BluffInput round={round} />}
       {room.phase === 2 && <Phase2IntraVote round={round} />}
       {room.phase === 3 && <Phase3MainVote round={round} myTeamSlot={myTeamSlot} />}
-      {room.phase === 4 && <Phase4Feedback round={round} />}
+      {room.phase === 4 && <Phase4Feedback round={round} room={room} />}
       {room.phase === 5 && (
         <section className="phase-shell">
           <h2>Final results on the TV.</h2>
