@@ -2,6 +2,19 @@ import { useEffect, useState } from 'react';
 import { adminFetch, uploadUrl } from '../lib/api';
 import './Admin.css';
 
+function prettyError(code) {
+  switch (code) {
+    case 'file_too_large': return 'Image is too big. Max 20 MB — try exporting at lower resolution.';
+    case 'no_file': return 'Pick an image to upload.';
+    case 'prompt_too_short': return 'Prompt needs at least 5 characters.';
+    case 'prompt_too_long': return 'Prompt is too long (500 char max).';
+    case 'unauthorized': return 'Wrong admin password.';
+    case 'upload_failed': return 'Upload failed on the server. Check Railway logs.';
+    case 'upload_rejected': return 'Server rejected the upload — try a different file.';
+    default: return code ?? 'Something went wrong.';
+  }
+}
+
 const PW_KEY = 'pd:adminPw';
 
 export default function Admin() {
@@ -51,7 +64,7 @@ export default function Admin() {
       e.target.reset();
       await refresh();
     } catch (err) {
-      setError(err.message);
+      setError(prettyError(err.message));
     } finally {
       setBusy(false);
     }

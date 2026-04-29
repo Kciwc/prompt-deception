@@ -7,10 +7,27 @@ const { requireAdmin } = require('../auth/admin');
 const contentLibrary = require('../db/contentLibrary');
 const storage = require('../storage');
 
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB raw — sharp recompresses to a much smaller WebP
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: MAX_UPLOAD_BYTES },
 });
+
+// Wrap multer so its errors come back as proper JSON instead of a bare 500.
+function uploadSingleImage(req, res, next) {
+  upload.single('image')(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: 'file_too_large',
+        maxBytes: MAX_UPLOAD_BYTES,
+      });
+    }
+    console.error('[admin/upload] multer error:', err);
+    return res.status(400).json({ error: 'upload_rejected', detail: err.message });
+  });
+}
 
 const router = express.Router();
 
@@ -18,7 +35,7 @@ router.get('/list', requireAdmin, (_req, res) => {
   res.json({ items: contentLibrary.list() });
 });
 
-router.post('/upload', requireAdmin, upload.single('image'), async (req, res) => {
+router.post('/upload', requireAdmin, uploadSingleImage, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'no_file' });
     const realPrompt = (req.body?.realPrompt ?? '').toString().trim();
