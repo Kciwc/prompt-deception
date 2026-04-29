@@ -72,6 +72,7 @@ function handleSocketGone(io, socket, explicit) {
   }
 
   if (room.isEmpty()) {
+    room.phaseMachine?.destroy();
     deleteRoom(code);
     if (room.isPublic) broadcastLobbyList(io);
     return;

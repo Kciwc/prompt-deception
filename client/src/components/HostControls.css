@@ -1,0 +1,44 @@
+.host-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.6rem 1rem;
+  border-radius: 14px;
+  backdrop-filter: blur(6px);
+}
+.host-controls button {
+  font-size: 0.95rem;
+  padding: 0.5em 1em;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+.host-controls button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+  transform: none;
+}
+.host-controls button.primary.big {
+  background: linear-gradient(135deg, var(--team-1), var(--team-2));
+  color: var(--bg-0);
+  font-size: 1.4rem;
+  padding: 0.8em 2em;
+}
+.host-controls button.warn {
+  background: rgba(255, 179, 0, 0.25);
+  color: var(--team-3);
+}
+.host-controls button.danger {
+  background: rgba(255, 77, 109, 0.2);
+  color: var(--danger);
+}
+.host-controls .kbd-hint {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+.host-controls .finished-label {
+  color: var(--text-dim);
+  font-size: 1.1rem;
+}

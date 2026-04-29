@@ -16,6 +16,8 @@ module.exports = {
   clientOrigin: optional('CLIENT_ORIGIN', 'http://localhost:5173'),
   hostSecret: isProd ? required('HOST_SECRET') : optional('HOST_SECRET', 'dev-host-secret-change-me'),
   adminPassword: isProd ? required('ADMIN_PASSWORD') : optional('ADMIN_PASSWORD', 'dev-admin'),
+  // 1.0 = real durations. Set e.g. 0.1 in dev for ~6s phases.
+  phaseScale: parseFloat(optional('PD_PHASE_SCALE', '1')),
   databaseUrl: optional('DATABASE_URL', null),
   r2: {
     endpoint: optional('R2_ENDPOINT', null),

@@ -1,0 +1,30 @@
+.phase-timer {
+  font-family: 'Fredoka', monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 0.3em 0.9em;
+  display: inline-flex;
+  align-items: center;
+  letter-spacing: 0.04em;
+  transition: color 120ms ease, background 120ms ease;
+}
+.phase-timer.size-sm { font-size: 1rem; }
+.phase-timer.size-md { font-size: 1.6rem; }
+.phase-timer.size-lg { font-size: 4rem; padding: 0.2em 0.6em; }
+
+.phase-timer.warn {
+  color: var(--bg-0);
+  background: var(--team-3);
+  animation: pulse 0.8s ease-in-out infinite alternate;
+}
+.phase-timer.paused {
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.04); }
+}

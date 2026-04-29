@@ -31,10 +31,12 @@ function serializeForPlayer(room, audience) {
     phase: room.phase,
     phaseDeadlineMs: room.phaseDeadlineMs,
     paused: room.paused,
+    pausedRemainingMs: room.pausedRemainingMs ?? null,
     config: room.config,
     teams: room.teams,
     players,
     currentRoundIdx: room.currentRoundIdx,
+    completedNonTrashed: room.rounds ? room.rounds.filter((r) => !r.trashed).length : 0,
     viewer: { kind: audience.kind, playerId: audience.kind === 'player' ? audience.playerId : null },
   };
 

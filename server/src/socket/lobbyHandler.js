@@ -1,5 +1,6 @@
 const { Room, clampRounds } = require('../game/Room');
 const { generateRoomCode } = require('../game/codeGenerator');
+const { PhaseMachine } = require('../game/phaseMachine');
 const { issueHostToken, verifyHostToken } = require('../auth/hostToken');
 const { setRoom, getRoom, allRooms, listPublicRooms } = require('./rooms');
 const { broadcastLobbyList, broadcastRoomState, LOBBY_BROWSER_ROOM } = require('./broadcast');
@@ -16,6 +17,7 @@ function attachLobbyHandlers(io, socket) {
       const config = { rounds: clampRounds(input?.rounds), doublePoints: !!input?.doublePoints };
       const code = generateRoomCode(allRooms());
       const room = new Room({ code, isPublic, config });
+      room.phaseMachine = new PhaseMachine(room, io);
       setRoom(room);
 
       const hostToken = issueHostToken(code);

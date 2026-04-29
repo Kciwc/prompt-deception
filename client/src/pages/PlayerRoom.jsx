@@ -4,9 +4,18 @@ import { socket } from '../lib/socket';
 import { getOrCreatePlayerId } from '../lib/playerId';
 import { useRoomState } from '../hooks/useRoomState';
 import { TeamBucket } from '../components/TeamBucket';
+import { PhaseTimer } from '../components/PhaseTimer';
 import './PlayerRoom.css';
 
 const NAME_KEY = 'pd:lastName';
+
+const PHASE_TITLES = {
+  1: 'Write a bluff',
+  2: 'Vote on your team',
+  3: 'Spot the real prompt',
+  4: 'Reveal',
+  5: 'Final results',
+};
 
 export default function PlayerRoom() {
   const { code: rawCode } = useParams();
@@ -18,6 +27,7 @@ export default function PlayerRoom() {
   const [joined, setJoined] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [kicked, setKicked] = useState(false);
 
   function submitName(e) {
     e.preventDefault();
@@ -43,25 +53,28 @@ export default function PlayerRoom() {
     else socket.once('connect', doJoin);
   }
 
-  // Auto re-join on reconnect.
   useEffect(() => {
     if (!joined) return;
     const onConnect = () => {
       const playerId = getOrCreatePlayerId();
       socket.emit('room:join', { code, playerId, name: name.trim() });
     };
+    const onKicked = () => setKicked(true);
     socket.on('connect', onConnect);
-    return () => socket.off('connect', onConnect);
+    socket.on('room:kicked', onKicked);
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('room:kicked', onKicked);
+    };
   }, [joined, code, name]);
 
-  function pickTeam(slot) {
-    socket.emit('room:team-switch', { teamSlot: slot });
-  }
-
-  function toggleReady() {
-    if (!room) return;
-    const me = room.players.find((p) => p.isMe);
-    socket.emit('room:ready', { ready: !(me?.ready) });
+  if (kicked) {
+    return (
+      <main className="player-shell">
+        <h1 className="room-code">You were kicked from the room.</h1>
+        <button onClick={() => nav('/')}>Back to lobby browser</button>
+      </main>
+    );
   }
 
   if (!joined) {
@@ -81,11 +94,7 @@ export default function PlayerRoom() {
           />
           <button type="submit" disabled={busy}>{busy ? 'Joining…' : 'Join Game'}</button>
           {err && <p className="err">{err}</p>}
-          <button
-            type="button"
-            className="link-btn"
-            onClick={() => nav('/')}
-          >
+          <button type="button" className="link-btn" onClick={() => nav('/')}>
             ← Back to lobby browser
           </button>
         </form>
@@ -102,11 +111,40 @@ export default function PlayerRoom() {
 
   return (
     <main className={`player-shell themed theme-${myColor ?? 'neutral'}`}>
+      {room.status !== 'lobby' && (
+        <div className="pinned-timer">
+          <span className="phase-label">{PHASE_TITLES[room.phase] ?? ''}</span>
+          <PhaseTimer
+            deadlineMs={room.phaseDeadlineMs}
+            paused={room.paused}
+            pausedRemainingMs={room.pausedRemainingMs}
+            size="sm"
+          />
+        </div>
+      )}
+
       <header className="player-header">
         <span className="room-tag">Room {code}</span>
         {me && <span className="my-name">{me.name}</span>}
       </header>
 
+      {room.status === 'lobby' && <LobbyView room={room} me={me} />}
+      {room.status === 'playing' && <PlayingView room={room} me={me} />}
+      {room.status === 'finished' && <FinishedView />}
+    </main>
+  );
+}
+
+function LobbyView({ room, me }) {
+  function pickTeam(slot) {
+    socket.emit('room:team-switch', { teamSlot: slot });
+  }
+  function toggleReady() {
+    socket.emit('room:ready', { ready: !(me?.ready) });
+  }
+
+  return (
+    <>
       <h2 className="prompt">Pick your team</h2>
       <div className="bucket-row">
         {room.teams.map((team) => {
@@ -118,7 +156,7 @@ export default function PlayerRoom() {
               players={players}
               onPick={() => pickTeam(team.slot)}
               isPicked={me?.teamSlot === team.slot}
-              disabled={room.status !== 'lobby'}
+              disabled={false}
             />
           );
         })}
@@ -127,13 +165,38 @@ export default function PlayerRoom() {
       <button
         className={`ready-btn ${me?.ready ? 'is-ready' : ''}`}
         onClick={toggleReady}
-        disabled={!me || room.status !== 'lobby'}
+        disabled={!me}
       >
         {me?.ready ? "Ready! (tap to unready)" : "Tap when you're ready"}
       </button>
 
-      <p className="hint">Waiting on the host to start. Switch teams freely until then.</p>
-    </main>
+      <p className="hint">Switch teams freely until the host hits start.</p>
+    </>
+  );
+}
+
+function PlayingView({ room }) {
+  return (
+    <section className="phase-shell">
+      <h2>{PHASE_TITLES[room.phase] ?? `Phase ${room.phase}`}</h2>
+      <p className="hint">
+        {room.phase === 1 && "You'd type your bluff here. The input lands in step 4."}
+        {room.phase === 2 && 'Your teammates would vote on bluffs here.'}
+        {room.phase === 3 && 'You\'d guess the real prompt here.'}
+        {room.phase === 4 && 'Watch the TV — reveal in progress.'}
+        {room.phase === 5 && 'Final podium on the TV.'}
+      </p>
+      {room.paused && <p className="paused-tag">⏸ Game paused by host</p>}
+    </section>
+  );
+}
+
+function FinishedView() {
+  return (
+    <section className="phase-shell">
+      <h2>That's a wrap!</h2>
+      <p className="hint">Hall of Fame coming in step 5.</p>
+    </section>
   );
 }
 
