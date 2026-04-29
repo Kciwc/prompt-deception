@@ -148,9 +148,24 @@ class Room {
     const p = this.players.get(playerId);
     if (!p) return false;
     if (![1, 2, 3].includes(teamSlot)) return false;
-    if (this.status !== 'lobby') return false;
+    if (p.teamSlot === teamSlot) return false; // no-op
+
     p.teamSlot = teamSlot;
-    p.ready = false; // changing teams resets ready state
+    p.ready = false;
+
+    // Mid-game switch: drop this round's contributions so they don't
+    // accidentally count toward the new team. Player effectively rejoins
+    // the round in progress with a clean slate.
+    if (this.status === 'playing' && this.currentRoundIdx >= 0) {
+      const round = this.rounds[this.currentRoundIdx];
+      if (round) {
+        round.perPlayerBluffs?.delete(playerId);
+        round.bluffTypingAt?.delete(playerId);
+        round.intraVotes?.delete(playerId);
+        round.mainVotes?.delete(playerId);
+        round.trashTalkVotes?.delete(playerId);
+      }
+    }
     return true;
   }
 

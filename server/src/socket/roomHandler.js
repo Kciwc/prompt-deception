@@ -9,13 +9,11 @@ function attachRoomHandlers(io, socket) {
     if (typeof playerId !== 'string' || playerId.length < 8 || playerId.length > 64) {
       return ack?.({ ok: false, error: 'bad_player_id' });
     }
-    // Allow reconnects mid-game (existing playerId) but block new joins after start.
-    const isReconnect = room.players.has(playerId);
-    if (room.status !== 'lobby' && !isReconnect) {
-      return ack?.({ ok: false, error: 'game_in_progress' });
-    }
     const cleanName = sanitizeName(name);
     if (!cleanName) return ack?.({ ok: false, error: 'bad_name' });
+
+    const isReconnect = room.players.has(playerId);
+    const isLateJoin = !isReconnect && room.status !== 'lobby';
 
     room.upsertPlayer({ playerId, socketId: socket.id, name: cleanName });
     socket.join(`room:${code}`);
@@ -26,7 +24,7 @@ function attachRoomHandlers(io, socket) {
     broadcastRoomState(io, room);
     if (room.isPublic) broadcastLobbyList(io);
 
-    ack?.({ ok: true, reconnect: isReconnect });
+    ack?.({ ok: true, reconnect: isReconnect, lateJoin: isLateJoin });
   });
 
   socket.on('room:team-switch', ({ teamSlot } = {}, ack) => {
