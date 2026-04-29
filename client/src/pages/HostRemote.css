@@ -54,3 +54,14 @@
 .counts .pill.tv-team-magenta { border-color: var(--team-2); }
 .counts .pill.tv-team-amber   { border-color: var(--team-3); }
 .counts .pill strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+
+.remote-shell .play-again-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  background: linear-gradient(135deg, var(--team-1), var(--team-2));
+  color: var(--bg-0);
+  font-weight: 700;
+  padding: 0.75em 1.5em;
+}

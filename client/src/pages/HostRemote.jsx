@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { socket } from '../lib/socket';
 import { saveHostToken, loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
+import { RotateCcw } from 'lucide-react';
 import { PhaseTimer } from '../components/PhaseTimer';
 import { HostControls } from '../components/HostControls';
 import { GameSettings } from '../components/GameSettings';
@@ -82,6 +83,15 @@ export default function HostRemote() {
       </section>
 
       {room.status === 'lobby' && <GameSettings room={room} compact />}
+
+      {room.status === 'finished' && (
+        <button
+          className="play-again-btn"
+          onClick={() => socket.emit('host:play-again')}
+        >
+          <RotateCcw size={16} /> Play Again
+        </button>
+      )}
 
       <HostControls room={room} />
     </main>

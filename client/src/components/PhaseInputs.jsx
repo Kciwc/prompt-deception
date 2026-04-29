@@ -9,16 +9,37 @@ const MIN_BLUFF_FINAL = 5;
 const MAX_BLUFF = 200;
 const BLUFF_DEBOUNCE_MS = 300;
 
+// Typing indicator window: show pulsing dots if a teammate's typingAt
+// timestamp is within the last 1500ms of server time. Refreshed by an
+// interval since `now` advances independently of state pushes.
+const TYPING_WINDOW_MS = 1500;
+
 // ──────────────────────────────────────────────────────────
 // Phase 1 (merged): write your bluff + vote on teammates' bluffs.
 // Both are mutable until the timer ends.
 // ──────────────────────────────────────────────────────────
-export function Phase1WriteAndVote({ round }) {
+export function Phase1WriteAndVote({ round, room }) {
   const teamBluffs = round.teamBluffs ?? [];
   const myEntry = teamBluffs.find((b) => b.isMine);
   const others = teamBluffs.filter((b) => !b.isMine);
   const myVote = round.myIntraVote ?? null;
   const tally = round.intraVoteTally ?? {};
+
+  // Drive the typing indicator off a 250ms tick — server sends serverTime,
+  // we use it to estimate clock drift, then compute "is this teammate
+  // typing right now?" each render.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+  // Approximate offset between server time and ours (tiny — assume LAN).
+  const serverDrift = room?.serverTime ? room.serverTime - now : 0;
+  function isTyping(b) {
+    if (!b.typingAt) return false;
+    const elapsed = now + serverDrift - b.typingAt;
+    return elapsed >= 0 && elapsed < TYPING_WINDOW_MS;
+  }
 
   // Local input state — server is the source of truth, but we keep a local
   // buffer so typing is responsive. Sync from server only when WE haven't
@@ -111,7 +132,10 @@ export function Phase1WriteAndVote({ round }) {
                     disabled={!finalEligible}
                     title={finalEligible ? 'Tap to vote / unvote' : 'Waiting on this teammate to write more'}
                   >
-                    <span className="author">{b.authorName}</span>
+                    <span className="author">
+                      {b.authorName}
+                      {isTyping(b) && <TypingDots />}
+                    </span>
                     <span className="vote-text">
                       {text || <em className="muted">— typing —</em>}
                     </span>
@@ -282,6 +306,15 @@ export function Phase3RevealAndFeedback({ round, room }) {
       </div>
       {submittedThumbs && <p className="muted">Thanks for the feedback.</p>}
     </section>
+  );
+}
+
+// Pulsing three-dot typing indicator.
+function TypingDots() {
+  return (
+    <span className="typing-dots" aria-label="typing">
+      <span /><span /><span />
+    </span>
   );
 }
 

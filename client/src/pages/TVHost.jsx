@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Smartphone, X as XIcon, Mic } from 'lucide-react';
+import { Smartphone, X as XIcon, Mic, RotateCcw } from 'lucide-react';
 import { socket } from '../lib/socket';
 import { loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
@@ -187,6 +187,12 @@ export default function TVHost() {
         <section className="tv-play">
           <div className="tv-phase-header">
             <h2 className="display-font">That's a wrap.</h2>
+            <button
+              className="play-again-btn"
+              onClick={() => socket.emit('host:play-again')}
+            >
+              <RotateCcw size={18} /> Play Again
+            </button>
           </div>
           <Podium teams={room.teams} />
           {room.config.trashTalkEnabled && room.trashTalkLeaderboard?.length > 0 && (

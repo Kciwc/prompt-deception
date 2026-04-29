@@ -228,8 +228,14 @@ function PlayingView({ room, me }) {
           <img src={uploadUrl(round.imageUrl)} alt="" />
         </div>
       )}
-      {room.paused && <p className="paused-tag">⏸ Game paused by host</p>}
-      {room.phase === 1 && <Phase1WriteAndVote round={round} />}
+      {room.paused && (
+        <p className={`paused-tag ${room.pausedReason === 'host_disconnected' ? 'host-gone' : ''}`}>
+          {room.pausedReason === 'host_disconnected'
+            ? '📺 Waiting for host to reconnect…'
+            : '⏸ Game paused by host'}
+        </p>
+      )}
+      {room.phase === 1 && <Phase1WriteAndVote round={round} room={room} />}
       {room.phase === 2 && <Phase2MainVote round={round} myTeamSlot={myTeamSlot} />}
       {room.phase === 3 && <Phase3RevealAndFeedback round={round} room={room} />}
       {room.phase === 4 && (

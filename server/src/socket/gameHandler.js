@@ -33,6 +33,7 @@ function attachGameHandlers(io, socket) {
       } else {
         round.perPlayerBluffs.set(playerId, cleaned);
       }
+      round.bluffTypingAt.set(playerId, Date.now());
       broadcastRoomState(io, room);
       room.phaseMachine.checkEarlyLock();
       ack?.({ ok: true });

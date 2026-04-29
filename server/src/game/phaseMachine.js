@@ -52,6 +52,7 @@ class PhaseMachine {
   pause() {
     if (this.room.paused || !this.room.phaseDeadlineMs) return false;
     this.room.paused = true;
+    this.room.pausedReason = 'host';
     this.room.pausedRemainingMs = Math.max(0, this.room.phaseDeadlineMs - Date.now());
     this._clearTimer();
     this._broadcast();
@@ -61,6 +62,7 @@ class PhaseMachine {
   resume() {
     if (!this.room.paused) return false;
     this.room.paused = false;
+    this.room.pausedReason = null;
     const remaining = Math.max(MIN_REMAINING_AFTER_PAUSE_MS, this.room.pausedRemainingMs ?? 0);
     this.room.phaseDeadlineMs = Date.now() + remaining;
     this.room.pausedRemainingMs = null;
@@ -165,7 +167,6 @@ class PhaseMachine {
     if (phase === 2) this._finalizeTeamBluffs();
     if (phase === 3) this._scoreRound();
     if (phase === 4 && this.room.status === 'playing') {
-      // Entering podium — ensure trash talk for the last round was tallied.
       this._tallyTrashTalkForCurrentRound();
     }
 
@@ -178,6 +179,17 @@ class PhaseMachine {
     this.room.phaseDurationMs = dur;
     this.room.phaseDeadlineMs = this.room.phaseStartMs + dur;
     this._scheduleAdvance(dur);
+
+    // Spec: if the host has disconnected, finish the current phase on
+    // autopilot but auto-pause before the NEXT phase begins. Phase 4
+    // (podium) is end-state, so don't bother pausing there.
+    if (!this.room.hostSocketId && phase < 4 && this.room.status === 'playing') {
+      this.room.paused = true;
+      this.room.pausedReason = 'host_disconnected';
+      this.room.pausedRemainingMs = dur;
+      this._clearTimer();
+    }
+
     this._broadcast();
   }
 
@@ -219,6 +231,7 @@ class PhaseMachine {
       imageUrl: pick?.imageUrl ?? null,
       realPrompt: pick?.realPrompt ?? '(no content uploaded — visit /admin)',
       perPlayerBluffs: new Map(),
+      bluffTypingAt: new Map(), // playerId -> last bluff:submit timestamp
       intraVotes: new Map(),
       teamBluffs: { 1: null, 2: null, 3: null },
       autoEmpty: { 1: false, 2: false, 3: false },
@@ -379,6 +392,12 @@ class PhaseMachine {
 
   destroy() {
     this._clearTimer();
+  }
+
+  // Called when the room is being reused for a fresh game.
+  resetForReplay() {
+    this._clearTimer();
+    this.undoStack = [];
   }
 }
 

@@ -94,6 +94,18 @@ function attachHostHandlers(io, socket) {
       ack?.({ ok: true });
     });
   });
+
+  socket.on('host:play-again', (_payload, ack) => {
+    withHost(ack, (room) => {
+      if (room.status !== 'finished') {
+        return ack?.({ ok: false, error: 'not_finished' });
+      }
+      room.phaseMachine?.resetForReplay();
+      room.resetForReplay();
+      broadcastRoomState(io, room);
+      ack?.({ ok: true });
+    });
+  });
 }
 
 module.exports = { attachHostHandlers };

@@ -143,6 +143,13 @@
   border-radius: 999px;
   color: var(--text-dim);
   margin: 0;
+  align-self: center;
+  text-align: center;
+}
+.paused-tag.host-gone {
+  background: rgba(255, 179, 0, 0.16);
+  color: var(--team-3);
+  font-weight: 600;
 }
 
 .round-image {

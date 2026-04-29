@@ -37,7 +37,10 @@ function serializeForPlayer(room, audience) {
     phaseDurationMs: room.phaseDurationMs ?? null,
     phaseDeadlineMs: room.phaseDeadlineMs,
     paused: room.paused,
+    pausedReason: room.pausedReason ?? null,
     pausedRemainingMs: room.pausedRemainingMs ?? null,
+    hostConnected: !!room.hostSocketId,
+    serverTime: Date.now(),
     config: room.config,
     teams: room.teams,
     players,
@@ -87,8 +90,9 @@ function serializeRound(room, audience) {
             authorName: p.name,
             text: r.perPlayerBluffs.get(pid) ?? '',
             isMine: pid === me,
+            typingAt: r.bluffTypingAt?.get(pid) ?? null,
           }))
-          .filter((b) => b.text.length > 0 || b.isMine); // always show my own slot
+          .filter((b) => b.text.length > 0 || b.isMine || b.typingAt); // always show my own slot
 
         // Per-pid vote tally for the team.
         const tally = {};

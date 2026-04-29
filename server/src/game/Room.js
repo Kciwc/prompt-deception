@@ -49,6 +49,25 @@ class Room {
     this.trashTalkLeaderboard = new Map();
   }
 
+  // Reset everything that's specific to a played game, keep the lobby
+  // membership intact: players, team slots, config. Players have to
+  // re-ready, since they're consenting to a fresh game.
+  resetForReplay() {
+    this.status = 'lobby';
+    this.phase = 0;
+    this.phaseDeadlineMs = null;
+    this.phaseStartMs = null;
+    this.phaseDurationMs = null;
+    this.paused = false;
+    this.pausedRemainingMs = null;
+    this.rounds = [];
+    this.currentRoundIdx = -1;
+    this.usedImageIds = [];
+    this.trashTalkLeaderboard = new Map();
+    for (const team of this.teams) team.score = 0;
+    for (const p of this.players.values()) p.ready = false;
+  }
+
   applyConfigPatch(patch) {
     if (this.status !== 'lobby') return false;
     let changed = false;
