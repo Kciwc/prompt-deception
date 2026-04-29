@@ -7,20 +7,22 @@ const cors = require('cors');
 const path = require('path');
 
 const { PORT } = require('./config');
-const healthRoutes = require('./routes/health');
-const adminRoutes = require('./routes/admin');
-const generateRoutes = require('./routes/generate');
-const { setupSocketHandlers } = require('./socket/handler');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Health check — registered first so nothing can block it
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: Date.now() });
+});
+
 // Serve uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // API routes
-app.use(healthRoutes);
+const adminRoutes = require('./routes/admin');
+const generateRoutes = require('./routes/generate');
 app.use(adminRoutes);
 app.use(generateRoutes);
 
@@ -40,11 +42,11 @@ const io = new Server(server, {
     origin: '*',
     methods: ['GET', 'POST'],
   },
-  // Increase default timeouts for spotty WiFi
   pingTimeout: 30000,
   pingInterval: 10000,
 });
 
+const { setupSocketHandlers } = require('./socket/handler');
 setupSocketHandlers(io);
 
 server.listen(PORT, '0.0.0.0', () => {
