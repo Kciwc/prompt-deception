@@ -88,8 +88,16 @@
 }
 .tv-phase-header h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
 
-.tv-image-slot {
+.tv-content-grid {
   flex: 1;
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) minmax(320px, 1fr);
+  gap: 1.5rem;
+  align-items: stretch;
+  min-height: 360px;
+}
+
+.tv-image-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,8 +105,109 @@
   border: 2px dashed rgba(255, 255, 255, 0.1);
   border-radius: 18px;
   min-height: 320px;
+  padding: 1rem;
+  overflow: hidden;
+}
+.tv-image-slot img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.tv-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 18px;
+  padding: 1.25rem 1.5rem;
+}
+.tv-side h3 { font-size: 1.3rem; color: var(--text-dim); margin: 0; }
+.tv-side h4 { font-size: 1rem; color: var(--text-dim); margin: 0; }
+
+.tv-progress ul, .tv-candidates ol, .tv-reveal ol, .round-score ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.tv-progress li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border-left: 4px solid;
+}
+.tv-progress li.tv-team-cyan    { border-left-color: var(--team-1); }
+.tv-progress li.tv-team-magenta { border-left-color: var(--team-2); }
+.tv-progress li.tv-team-amber   { border-left-color: var(--team-3); }
+.tv-progress li .count { font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.2rem; }
+
+.tv-candidates ol li {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  font-size: 1.15rem;
+}
+.tv-candidates .num { font-weight: 700; color: var(--text-dim); min-width: 1.6em; }
+.tv-candidates .text { font-style: italic; }
+
+.tv-reveal li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  font-size: 1.05rem;
+}
+.tv-reveal li.is-real { background: rgba(46, 204, 113, 0.2); border: 2px solid #2ecc71; }
+.tv-reveal .text { flex: 1; font-style: italic; }
+.tv-reveal .meta { display: inline-flex; gap: 0.5rem; align-items: center; }
+.tv-reveal .real-tag { background: #2ecc71; color: var(--bg-0); padding: 0.1em 0.5em; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }
+.tv-reveal .vc { color: var(--text-dim); }
+
+.round-score ul li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+
+.tv-podium {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1rem;
   padding: 2rem;
 }
+.podium-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  border: 4px solid;
+  border-radius: 18px 18px 0 0;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1.5rem 2rem;
+  min-width: 180px;
+  flex: 1;
+  max-width: 240px;
+}
+.podium-step h3 { font-size: 1.4rem; }
+.podium-step .score { font-size: 3rem; font-weight: 800; }
+.podium-step.podium-step-0 { min-height: 320px; }
+.podium-step.podium-step-1 { min-height: 240px; }
+.podium-step.podium-step-2 { min-height: 180px; }
 .tv-placeholder {
   color: var(--text-dim);
   font-size: 1.25rem;

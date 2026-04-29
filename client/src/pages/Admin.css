@@ -1,0 +1,72 @@
+.admin-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 1rem;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+.admin-shell h1 { font-size: 1.6rem; }
+.admin-shell h2 { font-size: 1.2rem; color: var(--text-dim); }
+
+.admin-login {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 320px;
+}
+.admin-login label { color: var(--text-dim); font-size: 0.9rem; }
+
+.admin-header { display: flex; justify-content: space-between; align-items: baseline; }
+.link-btn {
+  background: transparent;
+  color: var(--text-dim);
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: none;
+}
+.link-btn:hover { transform: none; box-shadow: none; }
+
+.admin-upload form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 1rem;
+  border-radius: 14px;
+}
+.admin-upload label { display: flex; flex-direction: column; gap: 0.3rem; color: var(--text-dim); font-size: 0.9rem; }
+
+.admin-list ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.admin-list li {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+.admin-list img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.admin-list .meta { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.admin-list .prompt { margin: 0; word-break: break-word; }
+.admin-list .muted { color: var(--text-dim); font-size: 0.85rem; margin: 0; }
+
+.admin-list button.danger {
+  background: rgba(255, 77, 109, 0.18);
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.err { color: var(--danger); margin: 0; }
+.footnote { font-size: 0.85rem; }

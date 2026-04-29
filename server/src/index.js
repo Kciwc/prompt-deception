@@ -1,16 +1,22 @@
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const path = require('path');
 const { Server } = require('socket.io');
 
 const config = require('./config');
 const { registerSocketHandlers } = require('./socket');
+const { adminRouter, UPLOADS_DIR } = require('./routes/admin');
 
 const app = express();
 app.use(cors({ origin: config.clientOrigin === '*' ? true : config.clientOrigin }));
 app.use(express.json({ limit: '64kb' }));
 
 app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime() }));
+
+// Serve uploaded images. CORS-permissive — they're public anyway.
+app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d' }));
+app.use('/admin', adminRouter);
 
 const server = http.createServer(app);
 

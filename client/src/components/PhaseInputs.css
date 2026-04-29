@@ -1,0 +1,97 @@
+.phase-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+.phase-input h2 { font-size: 1.4rem; margin: 0; }
+
+.phase-input form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.phase-input textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.phase-input .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+.phase-input .meta .warn { color: var(--team-3); }
+
+.phase-input blockquote {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--team-1);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0 12px 12px 0;
+  font-style: italic;
+}
+
+.vote-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vote-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 1rem;
+  border: 2px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.vote-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.10);
+  transform: none;
+  box-shadow: none;
+}
+.vote-btn.is-picked {
+  border-color: var(--team-1);
+  background: rgba(0, 229, 255, 0.12);
+}
+.vote-btn.is-mine .vote-text { color: var(--text-dim); font-style: italic; }
+.vote-btn.disabled { opacity: 0.45; cursor: not-allowed; }
+.vote-btn .vote-text { flex: 1; }
+.vote-btn .badge {
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.16);
+  padding: 0.15em 0.6em;
+  border-radius: 999px;
+  color: var(--text-dim);
+}
+
+.thumbs-row { display: flex; gap: 0.5rem; }
+.thumbs-row .thumb { flex: 1; font-size: 1.1rem; padding: 0.85rem; }
+.thumbs-row .thumb.up   { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+.thumbs-row .thumb.down { background: rgba(255, 77, 109, 0.2); color: var(--danger); }
+
+.link-btn {
+  background: transparent;
+  color: var(--text-dim);
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  align-self: flex-start;
+  box-shadow: none;
+}
+.link-btn:hover { transform: none; box-shadow: none; }
+
+.muted { color: var(--text-dim); margin: 0; }

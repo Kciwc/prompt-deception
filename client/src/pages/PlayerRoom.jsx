@@ -5,6 +5,13 @@ import { getOrCreatePlayerId } from '../lib/playerId';
 import { useRoomState } from '../hooks/useRoomState';
 import { TeamBucket } from '../components/TeamBucket';
 import { PhaseTimer } from '../components/PhaseTimer';
+import {
+  Phase1BluffInput,
+  Phase2IntraVote,
+  Phase3MainVote,
+  Phase4Feedback,
+} from '../components/PhaseInputs';
+import { uploadUrl } from '../lib/api';
 import './PlayerRoom.css';
 
 const NAME_KEY = 'pd:lastName';
@@ -130,7 +137,7 @@ export default function PlayerRoom() {
 
       {room.status === 'lobby' && <LobbyView room={room} me={me} />}
       {room.status === 'playing' && <PlayingView room={room} me={me} />}
-      {room.status === 'finished' && <FinishedView />}
+      {room.status === 'finished' && <FinishedView room={room} />}
     </main>
   );
 }
@@ -175,27 +182,46 @@ function LobbyView({ room, me }) {
   );
 }
 
-function PlayingView({ room }) {
+function PlayingView({ room, me }) {
+  const round = room.currentRound;
+  const myTeamSlot = me?.teamSlot;
+  if (!round) return <p className="hint">Loading round…</p>;
+
   return (
-    <section className="phase-shell">
-      <h2>{PHASE_TITLES[room.phase] ?? `Phase ${room.phase}`}</h2>
-      <p className="hint">
-        {room.phase === 1 && "You'd type your bluff here. The input lands in step 4."}
-        {room.phase === 2 && 'Your teammates would vote on bluffs here.'}
-        {room.phase === 3 && 'You\'d guess the real prompt here.'}
-        {room.phase === 4 && 'Watch the TV — reveal in progress.'}
-        {room.phase === 5 && 'Final podium on the TV.'}
-      </p>
+    <>
+      {round.imageUrl && (
+        <div className="round-image">
+          <img src={uploadUrl(round.imageUrl)} alt="" />
+        </div>
+      )}
       {room.paused && <p className="paused-tag">⏸ Game paused by host</p>}
-    </section>
+      {room.phase === 1 && <Phase1BluffInput round={round} />}
+      {room.phase === 2 && <Phase2IntraVote round={round} />}
+      {room.phase === 3 && <Phase3MainVote round={round} myTeamSlot={myTeamSlot} />}
+      {room.phase === 4 && <Phase4Feedback round={round} />}
+      {room.phase === 5 && (
+        <section className="phase-shell">
+          <h2>Final results on the TV.</h2>
+        </section>
+      )}
+    </>
   );
 }
 
-function FinishedView() {
+function FinishedView({ room }) {
+  const ranked = [...room.teams].sort((a, b) => b.score - a.score);
   return (
     <section className="phase-shell">
       <h2>That's a wrap!</h2>
-      <p className="hint">Hall of Fame coming in step 5.</p>
+      <ul className="final-scores">
+        {ranked.map((t, i) => (
+          <li key={t.slot} className={`team-${t.color}`}>
+            <span className="rank">#{i + 1}</span>
+            <span className="name">{t.name}</span>
+            <span className="score">{t.score}</span>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

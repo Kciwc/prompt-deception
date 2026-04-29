@@ -16,3 +16,6 @@ server/prisma/migrations/dev.db*
 client/dev-dist/
 client/public/sw.js
 client/public/workbox-*.js
+
+# Server local uploads (will move to R2 in step 5)
+server/uploads/

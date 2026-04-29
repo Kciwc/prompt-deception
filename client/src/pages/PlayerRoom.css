@@ -119,3 +119,44 @@
   color: var(--text-dim);
   margin: 0;
 }
+
+.round-image {
+  margin: 0 -1rem;
+  display: flex;
+  justify-content: center;
+}
+.round-image img {
+  width: 100%;
+  max-height: 36vh;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+}
+
+.final-scores {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.final-scores li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 4px solid;
+}
+.final-scores .team-cyan    { border-left-color: var(--team-1); }
+.final-scores .team-magenta { border-left-color: var(--team-2); }
+.final-scores .team-amber   { border-left-color: var(--team-3); }
+.final-scores .rank { font-weight: 700; color: var(--text-dim); }
+.final-scores .name { font-weight: 600; }
+.final-scores .score { font-weight: 700; font-size: 1.4rem; font-variant-numeric: tabular-nums; }

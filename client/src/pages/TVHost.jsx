@@ -6,6 +6,7 @@ import { useRoomState } from '../hooks/useRoomState';
 import { QRBlock } from '../components/QRBlock';
 import { PhaseTimer } from '../components/PhaseTimer';
 import { HostControls } from '../components/HostControls';
+import { uploadUrl } from '../lib/api';
 import './TVHost.css';
 
 const PHASE_LABELS = {
@@ -108,13 +109,29 @@ export default function TVHost() {
             />
           </div>
 
-          <div className="tv-image-slot">
-            <div className="tv-placeholder">
-              {room.phase === 1 && '🖼  Image placeholder — content lands in step 4'}
-              {room.phase === 2 && '🤐  Teams are voting on their bluffs'}
-              {room.phase === 3 && '🤔  Pick the real prompt on your phone'}
-              {room.phase === 4 && '🎉  Reveal — watch the screen'}
-              {room.phase === 5 && '🏆  Final podium coming in step 5'}
+          <div className="tv-content-grid">
+            <div className="tv-image-slot">
+              {room.currentRound?.imageUrl ? (
+                <img src={uploadUrl(room.currentRound.imageUrl)} alt="" />
+              ) : (
+                <div className="tv-placeholder">
+                  No image yet — upload some at <code>/admin</code>
+                </div>
+              )}
+            </div>
+            <div className="tv-side">
+              {room.phase === 1 && (
+                <SubmissionProgress room={room} kind="bluffs" />
+              )}
+              {room.phase === 2 && (
+                <SubmissionProgress room={room} kind="intra-votes" />
+              )}
+              {room.phase === 3 && (
+                <CandidatesPanel room={room} hideReal />
+              )}
+              {room.phase === 4 && (
+                <RevealPanel room={room} />
+              )}
             </div>
           </div>
 
@@ -134,9 +151,7 @@ export default function TVHost() {
           <div className="tv-phase-header">
             <h2>That's a wrap.</h2>
           </div>
-          <div className="tv-image-slot">
-            <div className="tv-placeholder">🏆 Hall of Fame ships in step 5</div>
-          </div>
+          <FinalPodium room={room} />
         </section>
       )}
 
@@ -145,4 +160,123 @@ export default function TVHost() {
       </footer>
     </div>
   );
+}
+
+function SubmissionProgress({ room, kind }) {
+  const round = room.currentRound;
+  if (!round) return null;
+  const counts = kind === 'bluffs' ? round.submissionCounts : round.intraVoteCounts;
+  const totalsByTeam = countConnectedByTeam(room);
+  const label = kind === 'bluffs' ? 'submitted bluffs' : 'voted';
+  return (
+    <div className="tv-progress">
+      <h3>{label}</h3>
+      <ul>
+        {room.teams.map((team) => {
+          const got = counts?.[team.slot] ?? 0;
+          const total = totalsByTeam[team.slot] ?? 0;
+          return (
+            <li key={team.slot} className={`tv-team-${team.color}`}>
+              <span className="tname">{team.name}</span>
+              <span className="count">{got}/{total}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function CandidatesPanel({ room }) {
+  const round = room.currentRound;
+  const candidates = round?.candidates ?? [];
+  return (
+    <div className="tv-candidates">
+      <h3>Vote on your phone</h3>
+      <ol>
+        {candidates.map((c, i) => (
+          <li key={c.id}>
+            <span className="num">{i + 1}.</span>
+            <span className="text">"{c.text}"</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function RevealPanel({ room }) {
+  const round = room.currentRound;
+  if (!round?.candidates || !round?.reveal) return null;
+  const { voteByCandidate, scoreDelta } = round.reveal;
+  return (
+    <div className="tv-reveal">
+      <h3>Reveal</h3>
+      <ol>
+        {round.candidates.map((c) => {
+          const isReal = c.id === 'real';
+          const votes = voteByCandidate?.[c.id] ?? 0;
+          return (
+            <li key={c.id} className={isReal ? 'is-real' : ''}>
+              <span className="text">"{c.text}"</span>
+              <span className="meta">
+                {isReal && <span className="real-tag">REAL</span>}
+                <span className="vc">{votes} vote{votes === 1 ? '' : 's'}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      {scoreDelta && (
+        <div className="round-score">
+          <h4>This round</h4>
+          <ul>
+            {room.teams.map((t) => {
+              const d = scoreDelta.perTeam?.[t.slot] ?? 0;
+              return (
+                <li key={t.slot} className={`tv-team-${t.color}`}>
+                  <span>{t.name}</span>
+                  <span>+{d}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FinalPodium({ room }) {
+  const ranked = [...room.teams].sort((a, b) => b.score - a.score);
+  // Visual podium: tied teams share the same step.
+  const stepFor = (i, score) => {
+    let step = 0;
+    let prevScore = null;
+    for (let k = 0; k < ranked.length; k++) {
+      if (prevScore !== null && ranked[k].score < prevScore) step++;
+      if (k === i) return step;
+      prevScore = ranked[k].score;
+    }
+    return step;
+  };
+  return (
+    <div className="tv-podium">
+      {ranked.map((t, i) => (
+        <div
+          key={t.slot}
+          className={`podium-step podium-step-${stepFor(i, t.score)} tv-team-${t.color}`}
+        >
+          <h3>{t.name}</h3>
+          <span className="score">{t.score}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function countConnectedByTeam(room) {
+  const out = { 1: 0, 2: 0, 3: 0 };
+  for (const p of room.players) if (p.isConnected) out[p.teamSlot] = (out[p.teamSlot] ?? 0) + 1;
+  return out;
 }
