@@ -20,22 +20,21 @@ export function usePhaseAudio(room) {
     if (wasPlaying && !isPlaying) audioManager.stopMusic();
     lastStatusRef.current = room.status;
 
-    // Phase-entry SFX.
+    // Phase-entry SFX. Reveal phase is now phase 3.
     if (lastPhaseRef.current !== room.phase) {
-      if (room.phase === 4) audioManager.reveal();
-      chimedKeyRef.current = null; // reset chime for the new phase
+      if (room.phase === 3) audioManager.reveal();
+      chimedKeyRef.current = null;
     }
     lastPhaseRef.current = room.phase;
   }, [room?.phase, room?.status]);
 
-  // 10s chime — tick frequently, fire once per phase when remaining crosses 10s.
+  // 10s chime — only in input phases (1=write+vote, 2=main vote).
   useEffect(() => {
     if (!room || !room.phaseDeadlineMs || room.paused) return;
     const id = setInterval(() => {
       const remaining = room.phaseDeadlineMs - Date.now();
       const phaseKey = `${room.currentRoundIdx}:${room.phase}`;
-      // Only chime in input phases (1, 2, 3) — not in lobby/reveal/podium.
-      const eligible = [1, 2, 3].includes(room.phase);
+      const eligible = [1, 2].includes(room.phase);
       if (eligible && remaining > 0 && remaining <= 10_000 && chimedKeyRef.current !== phaseKey) {
         chimedKeyRef.current = phaseKey;
         audioManager.chime();

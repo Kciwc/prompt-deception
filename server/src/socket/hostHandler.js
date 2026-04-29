@@ -12,6 +12,15 @@ function attachHostHandlers(io, socket) {
     return handler(room);
   }
 
+  socket.on('host:configure', (patch = {}, ack) => {
+    withHost(ack, (room) => {
+      if (room.status !== 'lobby') return ack?.({ ok: false, error: 'wrong_status' });
+      room.applyConfigPatch(patch);
+      broadcastRoomState(io, room);
+      ack?.({ ok: true, config: room.config });
+    });
+  });
+
   socket.on('host:start-game', (_payload, ack) => {
     withHost(ack, (room) => {
       if (room.status !== 'lobby') return ack?.({ ok: false, error: 'already_started' });

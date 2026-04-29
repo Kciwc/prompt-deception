@@ -1,162 +1,146 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { socket } from '../lib/socket';
 import { Confetti } from './Confetti';
 import './PhaseInputs.css';
 
-const MIN_BLUFF = 5;
+const MIN_BLUFF_FINAL = 5;
 const MAX_BLUFF = 200;
+const BLUFF_DEBOUNCE_MS = 300;
 
 // ──────────────────────────────────────────────────────────
-// Phase 1: write your bluff
+// Phase 1 (merged): write your bluff + vote on teammates' bluffs.
+// Both are mutable until the timer ends.
 // ──────────────────────────────────────────────────────────
-export function Phase1BluffInput({ round }) {
-  const [text, setText] = useState(round.myBluff ?? '');
-  const [submitted, setSubmitted] = useState(round.myBluff != null);
-  const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
+export function Phase1WriteAndVote({ round }) {
+  const teamBluffs = round.teamBluffs ?? [];
+  const myEntry = teamBluffs.find((b) => b.isMine);
+  const others = teamBluffs.filter((b) => !b.isMine);
+  const myVote = round.myIntraVote ?? null;
+  const tally = round.intraVoteTally ?? {};
 
-  // Sync from server snapshot if it's the canonical state.
+  // Local input state — server is the source of truth, but we keep a local
+  // buffer so typing is responsive. Sync from server only when WE haven't
+  // typed recently (avoid clobbering local edits with stale server state).
+  const [draft, setDraft] = useState(myEntry?.text ?? '');
+  const lastTypedRef = useRef(0);
+
   useEffect(() => {
-    if (round.myBluff != null) {
-      setText(round.myBluff);
-      setSubmitted(true);
+    const sinceTyped = Date.now() - lastTypedRef.current;
+    if (sinceTyped > 1000) {
+      // We haven't typed in >1s — accept server state as authoritative.
+      setDraft(myEntry?.text ?? '');
     }
-  }, [round.myBluff]);
+  }, [myEntry?.text]);
 
-  function submit(e) {
-    e.preventDefault();
-    const t = text.trim();
-    if (visibleLen(t) < MIN_BLUFF) {
-      setErr(`Minimum ${MIN_BLUFF} visible characters.`);
-      return;
-    }
-    setBusy(true);
-    setErr('');
-    socket.emit('bluff:submit', { text: t }, (res) => {
-      setBusy(false);
-      if (res?.ok) setSubmitted(true);
-      else setErr(serverError(res?.error));
-    });
+  // Debounce keystrokes before pushing to the server.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (draft === (myEntry?.text ?? '')) return; // unchanged from server
+      socket.emit('bluff:submit', { text: draft });
+    }, BLUFF_DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [draft]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function onChange(e) {
+    lastTypedRef.current = Date.now();
+    setDraft(e.target.value.slice(0, MAX_BLUFF));
   }
 
-  if (submitted) {
-    return (
-      <section className="phase-input">
-        <h2>Bluff submitted ✓</h2>
-        <blockquote>"{text}"</blockquote>
-        <button className="link-btn" onClick={() => setSubmitted(false)}>
-          Edit before timer ends
-        </button>
-        <p className="hint">Waiting on your team.</p>
-      </section>
-    );
+  function vote(targetPid) {
+    if (myVote === targetPid) {
+      socket.emit('intra-vote:clear');
+    } else {
+      socket.emit('intra-vote:cast', { targetPlayerId: targetPid });
+    }
   }
+
+  function nudge(targetPid) {
+    socket.emit('nudge:send', { targetPlayerId: targetPid });
+  }
+
+  const draftLen = visibleLen(draft);
 
   return (
     <section className="phase-input">
-      <h2>Write your bluff</h2>
-      <p className="hint">Make it convincing. Your teammates will pick one to submit.</p>
-      <form onSubmit={submit}>
+      <h2>Bluff & vote</h2>
+      <p className="hint">
+        Write a bluff for your team — and vote on teammates' as they type.
+        Highest-voted entry submits when the timer ends.
+      </p>
+
+      <div className="my-bluff">
+        <label>Your bluff</label>
         <textarea
-          autoFocus
           rows={3}
-          value={text}
-          onChange={(e) => setText(e.target.value.slice(0, MAX_BLUFF))}
-          placeholder="A startlingly plausible AI prompt…"
+          value={draft}
+          onChange={onChange}
+          placeholder="Make it convincing."
+          autoFocus
         />
         <div className="meta">
-          <span className={visibleLen(text.trim()) < MIN_BLUFF ? 'warn' : ''}>
-            {visibleLen(text.trim())}/{MAX_BLUFF}
+          <span className={draftLen < MIN_BLUFF_FINAL ? 'warn' : ''}>
+            {draftLen}/{MAX_BLUFF}
+            {draftLen < MIN_BLUFF_FINAL && draftLen > 0 && ' — needs 5+ to count'}
           </span>
-          <button type="submit" disabled={busy || visibleLen(text.trim()) < MIN_BLUFF}>
-            {busy ? 'Submitting…' : 'Submit bluff'}
-          </button>
         </div>
-        {err && <p className="err">{err}</p>}
-      </form>
+      </div>
+
+      {others.length > 0 && (
+        <>
+          <h3 className="section-h">Teammates</h3>
+          <ul className="vote-list">
+            {others.map((b) => {
+              const votes = tally[b.pid] ?? 0;
+              const text = (b.text ?? '').trim();
+              const finalEligible = visibleLen(text) >= MIN_BLUFF_FINAL;
+              const isLeader = others.every((o) => (tally[o.pid] ?? 0) <= votes) && votes > 0;
+              return (
+                <li key={b.pid}>
+                  <button
+                    type="button"
+                    className={[
+                      'vote-btn',
+                      myVote === b.pid ? 'is-picked' : '',
+                      isLeader ? 'is-leader' : '',
+                    ].join(' ')}
+                    onClick={() => finalEligible && vote(b.pid)}
+                    disabled={!finalEligible}
+                    title={finalEligible ? 'Tap to vote / unvote' : 'Waiting on this teammate to write more'}
+                  >
+                    <span className="author">{b.authorName}</span>
+                    <span className="vote-text">
+                      {text || <em className="muted">— typing —</em>}
+                    </span>
+                    <span className="vote-meta">
+                      {votes > 0 && <span className="badge votes">{votes}</span>}
+                      {myVote === b.pid && <span className="badge">voted</span>}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="nudge-btn"
+                    title="Nudge this teammate"
+                    onClick={(e) => { e.stopPropagation(); nudge(b.pid); }}
+                  >
+                    👋
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+      {others.length === 0 && (
+        <p className="muted">You're flying solo on your team. Just write — your bluff auto-wins.</p>
+      )}
     </section>
   );
 }
 
 // ──────────────────────────────────────────────────────────
-// Phase 2: vote on your team's entry
+// Phase 2 (was 3): main vote on the shuffled candidates.
 // ──────────────────────────────────────────────────────────
-export function Phase2IntraVote({ round }) {
-  const [busy, setBusy] = useState(false);
-  const lastClickRef = useRef(0);
-  const choices = round.teamBluffs ?? [];
-  const myVote = round.myIntraVote ?? null;
-
-  function vote(targetPlayerId) {
-    // 300ms debounce per spec.
-    const now = Date.now();
-    if (now - lastClickRef.current < 300) return;
-    lastClickRef.current = now;
-
-    setBusy(true);
-    socket.emit('intra-vote:cast', { targetPlayerId }, () => setBusy(false));
-  }
-
-  if (choices.length === 0) {
-    return (
-      <section className="phase-input">
-        <h2>No teammates with bluffs</h2>
-        <p className="hint">Your team will go in with "no bluff" this round.</p>
-      </section>
-    );
-  }
-
-  if (choices.length === 1) {
-    return (
-      <section className="phase-input">
-        <h2>Your team's bluff</h2>
-        <blockquote>"{choices[0].text}"</blockquote>
-        <p className="hint">Only one bluff to choose from. It auto-advances.</p>
-      </section>
-    );
-  }
-
-  function nudge(pid) {
-    socket.emit('nudge:send', { targetPlayerId: pid });
-  }
-
-  return (
-    <section className="phase-input">
-      <h2>Pick your team's entry</h2>
-      <p className="hint">Tap the bluff most likely to fool the other teams.</p>
-      <ul className="vote-list">
-        {choices.map((c) => (
-          <li key={c.pid}>
-            <button
-              className={`vote-btn ${myVote === c.pid ? 'is-picked' : ''} ${c.isMine ? 'is-mine' : ''}`}
-              onClick={() => vote(c.pid)}
-              disabled={busy}
-            >
-              <span className="vote-text">"{c.text}"</span>
-              {c.isMine && <span className="badge">yours</span>}
-              {myVote === c.pid && <span className="badge">voted</span>}
-            </button>
-            {!c.isMine && (
-              <button
-                type="button"
-                className="nudge-btn"
-                title="Nudge this teammate"
-                onClick={(e) => { e.stopPropagation(); nudge(c.pid); }}
-              >
-                👋
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-// ──────────────────────────────────────────────────────────
-// Phase 3: spot the real prompt
-// ──────────────────────────────────────────────────────────
-export function Phase3MainVote({ round, myTeamSlot }) {
+export function Phase2MainVote({ round, myTeamSlot }) {
   const lastClickRef = useRef(0);
   const candidates = round.candidates ?? [];
   const myVote = round.myMainVote ?? null;
@@ -171,7 +155,7 @@ export function Phase3MainVote({ round, myTeamSlot }) {
   return (
     <section className="phase-input">
       <h2>Spot the real prompt</h2>
-      <p className="hint">One of these is the real AI prompt. The rest are bluffs from other teams. You can change your vote until the timer hits zero.</p>
+      <p className="hint">One of these is the real AI prompt. Vote freely; you can change until the timer hits zero.</p>
       <ul className="vote-list">
         {candidates.map((c) => {
           const isMyTeam = c.id === `team:${myTeamSlot}`;
@@ -195,10 +179,11 @@ export function Phase3MainVote({ round, myTeamSlot }) {
 }
 
 // ──────────────────────────────────────────────────────────
-// Phase 4: thumbs up/down on the round (+ confetti if I guessed right)
+// Phase 3 (was 4): reveal — confetti for correct guessers, thumbs up/down,
+// and Trash Talk MVP voting (running cumulative leaderboard).
 // ──────────────────────────────────────────────────────────
-export function Phase4Feedback({ round, room }) {
-  const [submitted, setSubmitted] = useState(false);
+export function Phase3RevealAndFeedback({ round, room }) {
+  const [submittedThumbs, setSubmittedThumbs] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -206,7 +191,6 @@ export function Phase4Feedback({ round, room }) {
     return () => clearInterval(id);
   }, []);
 
-  // Mirror the TV's reveal cadence — fire confetti when the real is revealed.
   const elapsedFrac = room?.phaseStartMs && room?.phaseDurationMs
     ? Math.min(1, Math.max(0, (now - room.phaseStartMs) / room.phaseDurationMs))
     : 1;
@@ -214,10 +198,27 @@ export function Phase4Feedback({ round, room }) {
   const guessedReal = round.myMainVote === 'real';
   const fireConfetti = realRevealed && guessedReal;
 
-  function send(thumbs) {
-    setSubmitted(true);
-    socket.emit('feedback:submit', { thumbs });
+  const me = room.players.find((p) => p.isMe);
+  const trashTalkEnabled = room.config.trashTalkEnabled;
+  const trashTalk = round.trashTalk ?? { voteCounts: {}, myVote: null };
+
+  function sendThumbs(t) {
+    setSubmittedThumbs(true);
+    socket.emit('feedback:submit', { thumbs: t });
   }
+
+  function trashTalkVote(targetPid) {
+    if (trashTalk.myVote === targetPid) {
+      socket.emit('trashtalk:clear');
+    } else {
+      socket.emit('trashtalk:vote', { targetPlayerId: targetPid });
+    }
+  }
+
+  const otherPlayers = useMemo(
+    () => room.players.filter((p) => p.id !== me?.id),
+    [room.players, me?.id]
+  );
 
   return (
     <section className="phase-input">
@@ -227,18 +228,44 @@ export function Phase4Feedback({ round, room }) {
         {realRevealed
           ? guessedReal
             ? 'You picked the real prompt. +2 for your team.'
-            : "You missed it. Reveal continues on the TV."
+            : "You missed it — better luck next round."
           : 'Reveal in progress on the TV.'}
       </p>
+
+      {trashTalkEnabled && otherPlayers.length > 0 && (
+        <div className="trash-talk-block">
+          <h3 className="section-h">🎤 Trash Talk MVP</h3>
+          <p className="muted small">Who's killing it on the call this round?</p>
+          <ul className="trash-list">
+            {otherPlayers.map((p) => {
+              const votes = trashTalk.voteCounts?.[p.id] ?? 0;
+              const teamColor = room.teams.find((t) => t.slot === p.teamSlot)?.color ?? 'neutral';
+              return (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    className={`trash-btn theme-${teamColor} ${trashTalk.myVote === p.id ? 'is-picked' : ''}`}
+                    onClick={() => trashTalkVote(p.id)}
+                  >
+                    <span className="name">{p.name}</span>
+                    <span className="votes">{votes > 0 ? `${votes} 🎤` : ''}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
       <div className="thumbs-row">
-        <button className="thumb up" disabled={submitted} onClick={() => send('up')}>
+        <button className="thumb up" disabled={submittedThumbs} onClick={() => sendThumbs('up')}>
           👍 Good round
         </button>
-        <button className="thumb down" disabled={submitted} onClick={() => send('down')}>
+        <button className="thumb down" disabled={submittedThumbs} onClick={() => sendThumbs('down')}>
           👎 Skip
         </button>
       </div>
-      {submitted && <p className="muted">Thanks — we'll keep it (or burn it).</p>}
+      {submittedThumbs && <p className="muted">Thanks for the feedback.</p>}
     </section>
   );
 }
@@ -247,15 +274,6 @@ export function Phase4Feedback({ round, room }) {
 // utils
 // ──────────────────────────────────────────────────────────
 function visibleLen(s) {
+  if (typeof s !== 'string') return 0;
   return Array.from(s.replace(/\s+/g, ' ').trim()).length;
-}
-
-function serverError(code) {
-  switch (code) {
-    case 'bluff_too_short': return `Minimum ${MIN_BLUFF} visible characters.`;
-    case 'wrong_phase': return 'Too late — phase has moved on.';
-    case 'no_self_team_vote': return "You can't vote for your own team.";
-    case 'cross_team_vote': return 'You can only vote for your own teammates here.';
-    default: return code ? `Error: ${code}` : 'Could not submit.';
-  }
 }

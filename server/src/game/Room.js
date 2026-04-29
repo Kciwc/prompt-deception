@@ -4,10 +4,16 @@ const DEFAULT_TEAM_NAMES = ['Team Cyan', 'Team Magenta', 'Team Amber'];
 const MIN_ROUNDS = 3;
 const MAX_ROUNDS = 7;
 const DEFAULT_ROUNDS = 5;
+const VALID_SPEEDS = ['quick', 'standard', 'long'];
+const DEFAULT_SPEED = 'standard';
 
 function clampRounds(n) {
   const r = Number.isFinite(n) ? Math.floor(n) : DEFAULT_ROUNDS;
   return Math.min(MAX_ROUNDS, Math.max(MIN_ROUNDS, r));
+}
+
+function clampSpeed(s) {
+  return VALID_SPEEDS.includes(s) ? s : DEFAULT_SPEED;
 }
 
 class Room {
@@ -21,13 +27,15 @@ class Room {
     this.paused = false;
     this.config = {
       rounds: clampRounds(config?.rounds),
+      speed: clampSpeed(config?.speed),
       doublePoints: !!config?.doublePoints,
+      trashTalkEnabled: config?.trashTalkEnabled !== false, // default ON
     };
 
     this.hostSocketId = null;
     this.hostRemoteSocketId = null;
 
-    this.players = new Map(); // playerId -> { socketId, name, teamSlot, ready, isConnected, joinedAt }
+    this.players = new Map();
     this.teams = TEAM_COLORS.map((color, i) => ({
       slot: i + 1,
       color,
@@ -35,9 +43,36 @@ class Room {
       score: 0,
     }));
 
-    // Round state populated in step 3+.
     this.rounds = [];
     this.currentRoundIdx = -1;
+    // Cumulative trash talk votes across rounds: playerId -> count.
+    this.trashTalkLeaderboard = new Map();
+  }
+
+  applyConfigPatch(patch) {
+    if (this.status !== 'lobby') return false;
+    let changed = false;
+    if (patch.rounds !== undefined) {
+      const v = clampRounds(patch.rounds);
+      if (v !== this.config.rounds) { this.config.rounds = v; changed = true; }
+    }
+    if (patch.speed !== undefined) {
+      const v = clampSpeed(patch.speed);
+      if (v !== this.config.speed) { this.config.speed = v; changed = true; }
+    }
+    if (patch.doublePoints !== undefined) {
+      const v = !!patch.doublePoints;
+      if (v !== this.config.doublePoints) { this.config.doublePoints = v; changed = true; }
+    }
+    if (patch.trashTalkEnabled !== undefined) {
+      const v = !!patch.trashTalkEnabled;
+      if (v !== this.config.trashTalkEnabled) { this.config.trashTalkEnabled = v; changed = true; }
+    }
+    if (changed) {
+      // Settings changed under players' feet — re-confirm readiness.
+      for (const p of this.players.values()) p.ready = false;
+    }
+    return changed;
   }
 
   // Smallest team gets the next player. Tiebreak: lowest slot.
@@ -127,4 +162,10 @@ class Room {
   }
 }
 
-module.exports = { Room, TEAM_COLORS, DEFAULT_TEAM_NAMES, MIN_ROUNDS, MAX_ROUNDS, DEFAULT_ROUNDS, clampRounds };
+module.exports = {
+  Room,
+  TEAM_COLORS, DEFAULT_TEAM_NAMES,
+  MIN_ROUNDS, MAX_ROUNDS, DEFAULT_ROUNDS,
+  VALID_SPEEDS, DEFAULT_SPEED,
+  clampRounds, clampSpeed,
+};

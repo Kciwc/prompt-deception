@@ -9,6 +9,7 @@ import { PhaseTimer } from '../components/PhaseTimer';
 import { HostControls } from '../components/HostControls';
 import { RevealPanel } from '../components/RevealPanel';
 import { HostAudioControls } from '../components/AudioControls';
+import { GameSettings } from '../components/GameSettings';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { usePhaseAudio } from '../hooks/usePhaseAudio';
 import { uploadUrl } from '../lib/api';
@@ -16,11 +17,10 @@ import './TVHost.css';
 
 const PHASE_LABELS = {
   0: 'Lobby',
-  1: 'Phase 1 — Write your bluff',
-  2: 'Phase 2 — Pick your team\'s entry',
-  3: 'Phase 3 — Spot the real prompt',
-  4: 'Phase 4 — Reveal',
-  5: 'Phase 5 — Podium',
+  1: 'Bluff & vote — your team',
+  2: 'Spot the real prompt',
+  3: 'Reveal',
+  4: 'Podium',
 };
 
 export default function TVHost() {
@@ -91,10 +91,11 @@ export default function TVHost() {
       </header>
 
       {inLobby && (
-        <section className="tv-main">
+        <section className="tv-main tv-lobby-grid">
           <div className="tv-qr">
             <QRBlock url={joinUrl} code={code} />
             <p className="tv-qr-hint">Scan or visit <span>{joinUrl}</span></p>
+            <GameSettings room={room} />
           </div>
 
           <div className="tv-teams">
@@ -148,16 +149,16 @@ export default function TVHost() {
               )}
             </div>
             <div className="tv-side">
-              {room.phase === 1 && (
-                <SubmissionProgress room={room} kind="bluffs" />
-              )}
-              {room.phase === 2 && (
-                <SubmissionProgress room={room} kind="intra-votes" />
-              )}
+              {room.phase === 1 && <Phase1Panel room={room} />}
+              {room.phase === 2 && <CandidatesPanel room={room} />}
               {room.phase === 3 && (
-                <CandidatesPanel room={room} hideReal />
+                <div className="tv-side-stack">
+                  <RevealPanel room={room} />
+                  {room.config.trashTalkEnabled && (
+                    <TrashTalkRoundPanel room={room} />
+                  )}
+                </div>
               )}
-              {room.phase === 4 && <RevealPanel room={room} />}
             </div>
           </div>
 
@@ -168,6 +169,9 @@ export default function TVHost() {
                 <span className="tscore">{team.score}</span>
               </div>
             ))}
+            {room.config.trashTalkEnabled && room.trashTalkLeaderboard?.length > 0 && (
+              <CumulativeTrashPill leaderboard={room.trashTalkLeaderboard} teams={room.teams} />
+            )}
           </div>
         </section>
       )}
@@ -178,6 +182,9 @@ export default function TVHost() {
             <h2>That's a wrap.</h2>
           </div>
           <FinalPodium room={room} />
+          {room.config.trashTalkEnabled && room.trashTalkLeaderboard?.length > 0 && (
+            <TrashTalkMVPCallout leaderboard={room.trashTalkLeaderboard} teams={room.teams} />
+          )}
         </section>
       )}
 
@@ -210,15 +217,18 @@ export default function TVHost() {
   );
 }
 
-function SubmissionProgress({ room, kind }) {
+// Phase 1 (write+vote merged): show per-team submission progress and a
+// hint about the collaborative experience. We don't show bluff text on the
+// TV — it's a public display.
+function Phase1Panel({ room }) {
   const round = room.currentRound;
   if (!round) return null;
-  const counts = kind === 'bluffs' ? round.submissionCounts : round.intraVoteCounts;
+  const counts = round.submissionCounts ?? { 1: 0, 2: 0, 3: 0 };
   const totalsByTeam = countConnectedByTeam(room);
-  const label = kind === 'bluffs' ? 'submitted bluffs' : 'voted';
   return (
     <div className="tv-progress">
-      <h3>{label}</h3>
+      <h3>Bluff & vote</h3>
+      <p className="muted">Teammates write together — vote on each other's drafts on your phone.</p>
       <ul>
         {room.teams.map((team) => {
           const got = counts?.[team.slot] ?? 0;
@@ -231,6 +241,75 @@ function SubmissionProgress({ room, kind }) {
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+function TrashTalkRoundPanel({ room }) {
+  const round = room.currentRound;
+  if (!round?.trashTalk) return null;
+  const counts = round.trashTalk.voteCounts ?? {};
+  const entries = Object.entries(counts)
+    .map(([pid, count]) => {
+      const p = room.players.find((x) => x.id === pid);
+      return p ? { name: p.name, count, teamSlot: p.teamSlot } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  if (entries.length === 0) {
+    return (
+      <div className="tv-progress trash-talk-tv">
+        <h3>🎤 Trash Talk</h3>
+        <p className="muted">Vote for the funniest player on the call.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="tv-progress trash-talk-tv">
+      <h3>🎤 Trash Talk — this round</h3>
+      <ul>
+        {entries.map((e, i) => (
+          <li key={`${e.name}-${i}`}>
+            <span className="tname">{e.name}</span>
+            <span className="count">{e.count} 🎤</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function CumulativeTrashPill({ leaderboard, teams }) {
+  const top = leaderboard[0];
+  if (!top || top.votes === 0) return null;
+  const color = teams.find((t) => t.slot === top.teamSlot)?.color ?? 'neutral';
+  return (
+    <div className={`tv-team-pill cumulative-pill tv-team-${color}`} title="Cumulative Trash Talk leader">
+      <span className="tname">🎤 {top.name}</span>
+      <span className="tscore">{top.votes}</span>
+    </div>
+  );
+}
+
+function TrashTalkMVPCallout({ leaderboard, teams }) {
+  // Find the top score and everyone tied with it.
+  const top = leaderboard[0];
+  if (!top || top.votes === 0) return null;
+  const winners = leaderboard.filter((e) => e.votes === top.votes);
+  return (
+    <div className="trash-mvp-callout">
+      <div className="trash-mvp-title">🎤 Trash Talk MVP</div>
+      <div className="trash-mvp-winners">
+        {winners.map((w) => {
+          const color = teams.find((t) => t.slot === w.teamSlot)?.color ?? 'neutral';
+          return (
+            <span key={w.playerId} className={`mvp-name tv-team-${color}`}>
+              {w.name} <span className="mvp-votes">({w.votes})</span>
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

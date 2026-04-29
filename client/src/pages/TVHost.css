@@ -32,6 +32,16 @@
   gap: 2rem;
   align-items: start;
 }
+.tv-lobby-grid .tv-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.tv-lobby-grid .tv-qr .game-settings {
+  width: 100%;
+  margin-top: 0.5rem;
+}
 
 .tv-qr { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
 .tv-qr-hint { color: var(--text-dim); margin: 0; font-size: 1rem; text-align: center; }
@@ -208,6 +218,44 @@
 .podium-step.podium-step-0 { min-height: 320px; }
 .podium-step.podium-step-1 { min-height: 240px; }
 .podium-step.podium-step-2 { min-height: 180px; }
+
+.tv-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.trash-talk-tv h3 { color: var(--team-3); }
+
+.cumulative-pill {
+  background: rgba(255, 179, 0, 0.18);
+}
+
+.trash-mvp-callout {
+  margin-top: 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 179, 0, 0.14), rgba(255, 43, 214, 0.12));
+  border: 2px solid rgba(255, 179, 0, 0.4);
+}
+.trash-mvp-title { font-size: 1.4rem; font-weight: 800; letter-spacing: 0.05em; }
+.trash-mvp-winners {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+.mvp-name { padding: 0.2em 0.7em; border-radius: 12px; background: rgba(0, 0, 0, 0.3); }
+.mvp-name.tv-team-cyan    { color: var(--team-1); }
+.mvp-name.tv-team-magenta { color: var(--team-2); }
+.mvp-name.tv-team-amber   { color: var(--team-3); }
+.mvp-votes { color: var(--text-dim); font-size: 0.8em; font-weight: 500; }
 .tv-placeholder {
   color: var(--text-dim);
   font-size: 1.25rem;

@@ -1,0 +1,59 @@
+.game-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  min-width: 0;
+}
+.game-settings.compact {
+  gap: 0.4rem;
+  padding: 0.65rem 0.8rem;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.setting-label {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.seg {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+.seg-btn {
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  padding: 0.3em 0.95em;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.seg-btn:hover:not(:disabled) { transform: none; box-shadow: none; color: var(--text); background: rgba(255, 255, 255, 0.06); }
+.seg-btn.active {
+  background: linear-gradient(135deg, var(--team-1), var(--team-2));
+  color: var(--bg-0);
+}
+.seg-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.est-row { padding-top: 0.4rem; border-top: 1px dashed rgba(255, 255, 255, 0.1); }
+.est-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.locked-note {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-style: italic;
+}

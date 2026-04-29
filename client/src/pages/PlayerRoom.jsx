@@ -6,10 +6,9 @@ import { useRoomState } from '../hooks/useRoomState';
 import { TeamBucket } from '../components/TeamBucket';
 import { PhaseTimer } from '../components/PhaseTimer';
 import {
-  Phase1BluffInput,
-  Phase2IntraVote,
-  Phase3MainVote,
-  Phase4Feedback,
+  Phase1WriteAndVote,
+  Phase2MainVote,
+  Phase3RevealAndFeedback,
 } from '../components/PhaseInputs';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useBeforeUnload } from '../hooks/useBeforeUnload';
@@ -21,11 +20,10 @@ import './PlayerRoom.css';
 const NAME_KEY = 'pd:lastName';
 
 const PHASE_TITLES = {
-  1: 'Write a bluff',
-  2: 'Vote on your team',
-  3: 'Spot the real prompt',
-  4: 'Reveal',
-  5: 'Final results',
+  1: 'Bluff & vote',
+  2: 'Spot the real',
+  3: 'Reveal',
+  4: 'Final results',
 };
 
 export default function PlayerRoom() {
@@ -224,11 +222,10 @@ function PlayingView({ room, me }) {
         </div>
       )}
       {room.paused && <p className="paused-tag">⏸ Game paused by host</p>}
-      {room.phase === 1 && <Phase1BluffInput round={round} />}
-      {room.phase === 2 && <Phase2IntraVote round={round} />}
-      {room.phase === 3 && <Phase3MainVote round={round} myTeamSlot={myTeamSlot} />}
-      {room.phase === 4 && <Phase4Feedback round={round} room={room} />}
-      {room.phase === 5 && (
+      {room.phase === 1 && <Phase1WriteAndVote round={round} />}
+      {room.phase === 2 && <Phase2MainVote round={round} myTeamSlot={myTeamSlot} />}
+      {room.phase === 3 && <Phase3RevealAndFeedback round={round} room={room} />}
+      {room.phase === 4 && (
         <section className="phase-shell">
           <h2>Final results on the TV.</h2>
         </section>

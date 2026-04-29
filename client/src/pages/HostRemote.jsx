@@ -5,6 +5,7 @@ import { saveHostToken, loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
 import { PhaseTimer } from '../components/PhaseTimer';
 import { HostControls } from '../components/HostControls';
+import { GameSettings } from '../components/GameSettings';
 import './HostRemote.css';
 
 export default function HostRemote() {
@@ -79,6 +80,8 @@ export default function HostRemote() {
           </div>
         ))}
       </section>
+
+      {room.status === 'lobby' && <GameSettings room={room} compact />}
 
       <HostControls room={room} />
     </main>
