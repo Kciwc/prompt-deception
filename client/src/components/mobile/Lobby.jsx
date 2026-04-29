@@ -4,7 +4,8 @@ import socket from '../../socket';
 import { TEAM_COLORS } from '../../styles/theme';
 
 export default function Lobby({ onJoined, gameState, joined }) {
-  const [roomCode, setRoomCode] = useState('');
+  const urlRoom = new URLSearchParams(window.location.search).get('room');
+  const [roomCode, setRoomCode] = useState(urlRoom ? urlRoom.toUpperCase() : '');
   const [playerName, setPlayerName] = useState('');
   const [teamNameProposal, setTeamNameProposal] = useState('');
 
@@ -23,23 +24,32 @@ export default function Lobby({ onJoined, gameState, joined }) {
         <Typography variant="h3" fontWeight={800} gutterBottom>
           Join Game
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-          Enter the code from the TV screen
-        </Typography>
-        <TextField
-          fullWidth
-          label="Room Code"
-          value={roomCode}
-          onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-          inputProps={{ maxLength: 4, style: { textAlign: 'center', fontSize: 28, letterSpacing: 8 } }}
-          sx={{ mb: 2, maxWidth: 300, mx: 'auto', display: 'block' }}
-        />
+        {urlRoom ? (
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            Joining room <strong>{roomCode}</strong>
+          </Typography>
+        ) : (
+          <>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+              Enter the code from the TV screen
+            </Typography>
+            <TextField
+              fullWidth
+              label="Room Code"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              inputProps={{ maxLength: 4, style: { textAlign: 'center', fontSize: 28, letterSpacing: 8 } }}
+              sx={{ mb: 2, maxWidth: 300, mx: 'auto', display: 'block' }}
+            />
+          </>
+        )}
         <TextField
           fullWidth
           label="Your Name"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
           inputProps={{ maxLength: 20 }}
+          autoFocus={!!urlRoom}
           sx={{ mb: 3, maxWidth: 300, mx: 'auto', display: 'block' }}
         />
         <Button variant="contained" size="large" onClick={handleJoin} sx={{ minWidth: 200 }}>

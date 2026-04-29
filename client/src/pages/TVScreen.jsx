@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
+import { QRCodeSVG } from 'qrcode.react';
 import socket from '../socket';
 import useGameState from '../hooks/useGameState';
 import useAudio from '../hooks/useAudio';
@@ -61,10 +62,19 @@ export default function TVScreen({ theme, toggleTheme }) {
       {/* Theme toggle */}
       <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
 
-      {/* Room code display (lobby) */}
+      {/* Room code + QR code display (lobby) */}
       {gameState?.phase === 0 && roomCode && (
         <Box sx={{ position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 10 }}>
-          <Typography variant="h6" color="text.secondary">Join at</Typography>
+          <Typography variant="h6" color="text.secondary">Scan to join</Typography>
+          <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 3, display: 'inline-block', mt: 1, mb: 2 }}>
+            <QRCodeSVG
+              value={`${window.location.origin}/?room=${roomCode}`}
+              size={180}
+              level="M"
+              includeMargin={false}
+            />
+          </Box>
+          <Typography variant="body2" color="text.secondary">or enter code</Typography>
           <Typography variant="h2" fontWeight={800} sx={{ letterSpacing: 8, color: 'primary.main' }}>
             {roomCode}
           </Typography>
