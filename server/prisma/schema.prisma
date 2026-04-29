@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────────────────────────────────────
+// Content library — written by admin, read at game start.
+// ───────────────────────────────────────────────────────────
+
+model PromptImage {
+  id         String   @id @default(cuid())
+  imageKey   String   // R2 object key
+  realPrompt String
+  uploadedAt DateTime @default(now())
+  active     Boolean  @default(true)
+
+  @@index([active])
+}
+
+// ───────────────────────────────────────────────────────────
+// End-of-game records. Nothing is written here mid-game.
+// ───────────────────────────────────────────────────────────
+
+model Player {
+  id          String       @id  // generated client-side, persisted in localStorage
+  displayName String
+  createdAt   DateTime     @default(now())
+  bluffs      Bluff[]      @relation("BluffAuthor")
+  feedback    Feedback[]
+  teamMembers PlayerTeam[]
+}
+
+model Game {
+  id           String     @id @default(cuid())
+  code         String
+  startedAt    DateTime
+  finishedAt   DateTime   @default(now())
+  doublePoints Boolean    @default(false)
+  teams        Team[]
+  rounds       Round[]
+  feedback     Feedback[]
+
+  @@index([finishedAt])
+}
+
+model Team {
+  id      String       @id @default(cuid())
+  gameId  String
+  game    Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  slot    Int          // 1 | 2 | 3
+  color   String       // "cyan" | "magenta" | "amber"
+  name    String
+  score   Int
+  players PlayerTeam[]
+  bluffs  Bluff[]
+
+  @@unique([gameId, slot])
+}
+
+model PlayerTeam {
+  playerId String
+  teamId   String
+  player   Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team     Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([playerId, teamId])
+}
+
+model Round {
+  id         String  @id @default(cuid())
+  gameId     String
+  game       Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  index      Int
+  imageKey   String
+  realPrompt String
+  trashed    Boolean @default(false)
+  bluffs     Bluff[]
+
+  @@unique([gameId, index])
+}
+
+model Bluff {
+  id          String  @id @default(cuid())
+  roundId     String
+  round       Round   @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  teamId      String
+  team        Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  authorId    String?
+  author      Player? @relation("BluffAuthor", fields: [authorId], references: [id])
+  text        String
+  trickCount  Int     // votes received from non-teammates
+  isAutoEmpty Boolean @default(false)  // empty-team failsafe ("no bluff")
+}
+
+model Feedback {
+  id         String   @id @default(cuid())
+  gameId     String
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  playerId   String
+  player     Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  roundIndex Int
+  thumbsUp   Boolean
+  createdAt  DateTime @default(now())
+}

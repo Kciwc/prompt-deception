@@ -1,39 +1,24 @@
-import React, { useEffect, useState } from "react";
-import io from "socket.io-client";
-
-// Connect to the backend server running on port 3001
-const socket = io.connect("https://prompt-deception-production.up.railway.app");
+import './App.css';
+import { useSocketStatus } from './hooks/useSocketStatus';
+import { SERVER_URL } from './lib/socket';
 
 function App() {
-  const [isConnected, setIsConnected] = useState(false);
-
-  useEffect(() => {
-    // Listen for connection
-    socket.on("connect", () => {
-      setIsConnected(true);
-    });
-
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-    });
-
-    // Cleanup listeners
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-    };
-  }, []);
+  const isConnected = useSocketStatus();
 
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
-      <h1>Prompt Deception</h1>
-      <h3>
-        Server Status:{" "}
-        <span style={{ color: isConnected ? "green" : "red" }}>
-          {isConnected ? "CONNECTED 🟢" : "DISCONNECTED 🔴"}
-        </span>
-      </h3>
-    </div>
+    <main className="app-shell">
+      <h1 className="brand">Ceyon's Super Spiffy Trivia</h1>
+      <p style={{ color: 'var(--text-dim)', maxWidth: '36ch' }}>
+        Scaffolding only — lobby browser, rooms, and gameplay land in step 2.
+      </p>
+      <div className="status-pill">
+        <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
+        Server: {isConnected ? 'connected' : 'disconnected'}
+        <code style={{ color: 'var(--text-dim)', fontSize: '0.8em', marginLeft: '0.5em' }}>
+          {SERVER_URL}
+        </code>
+      </div>
+    </main>
   );
 }
 
