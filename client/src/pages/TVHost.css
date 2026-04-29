@@ -1,0 +1,88 @@
+.tv-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 3rem;
+  gap: 1.5rem;
+  width: 100%;
+  /* TV view assumes 16:9 — sized to fill the viewport */
+  min-height: 100vh;
+}
+.tv-shell.error { align-items: center; justify-content: center; text-align: center; }
+
+.tv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+.tv-header .brand {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  background: linear-gradient(90deg, var(--team-1), var(--team-2), var(--team-3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.tv-room-meta { color: var(--text-dim); font-size: 1.1rem; }
+
+.tv-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.tv-qr { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.tv-qr-hint { color: var(--text-dim); margin: 0; font-size: 1rem; text-align: center; }
+.tv-qr-hint span { color: var(--text); font-weight: 600; }
+
+.tv-teams {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.tv-team {
+  border: 4px solid;
+  border-radius: 18px;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  min-height: 320px;
+}
+.tv-team h2 {
+  font-size: 1.4rem;
+  margin: 0 0 0.75rem 0;
+}
+.tv-team ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.tv-team li {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  animation: tv-drop 280ms cubic-bezier(.2,.9,.3,1.4);
+}
+.tv-team li.ready { background: rgba(46, 204, 113, 0.22); }
+.tv-team li.empty { background: transparent; color: var(--text-dim); font-style: italic; }
+
+.tv-team-cyan    { border-color: var(--team-1); }
+.tv-team-magenta { border-color: var(--team-2); }
+.tv-team-amber   { border-color: var(--team-3); }
+
+@keyframes tv-drop {
+  from { transform: translateY(-14px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.tv-footer { display: flex; flex-direction: column; gap: 0.5rem; }
+.ready-bar {
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.ready-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--team-1), var(--team-2), var(--team-3));
+  transition: width 220ms ease;
+}
+.ready-meta { color: var(--text-dim); text-align: center; font-size: 1rem; }

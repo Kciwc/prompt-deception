@@ -1,0 +1,84 @@
+.player-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 1rem;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  /* Tinted by team color when joined */
+  transition: background 240ms ease;
+}
+
+.player-shell.themed {
+  border-radius: 0;
+  min-height: 100vh;
+}
+.player-shell.theme-cyan    { background: linear-gradient(180deg, rgba(0,229,255,0.18), transparent 60%); }
+.player-shell.theme-magenta { background: linear-gradient(180deg, rgba(255,43,214,0.18), transparent 60%); }
+.player-shell.theme-amber   { background: linear-gradient(180deg, rgba(255,179,0,0.18), transparent 60%); }
+.player-shell.theme-neutral { background: linear-gradient(180deg, rgba(176,184,196,0.12), transparent 60%); }
+
+.room-code {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.room-code span {
+  color: var(--text);
+  font-family: monospace;
+  letter-spacing: 0.4em;
+  padding-left: 0.4em;
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.name-form { display: flex; flex-direction: column; gap: 0.75rem; padding-top: 1rem; }
+.name-form label { color: var(--text-dim); }
+.err { color: var(--danger); margin: 0; }
+.link-btn {
+  background: transparent;
+  color: var(--text-dim);
+  text-decoration: underline;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  align-self: center;
+  box-shadow: none;
+}
+.link-btn:hover { transform: none; box-shadow: none; }
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+.my-name { color: var(--text); font-weight: 600; }
+
+.prompt { text-align: center; margin: 0; }
+
+.bucket-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+@media (min-width: 480px) {
+  .bucket-row { grid-template-columns: repeat(3, 1fr); }
+}
+
+.ready-btn {
+  font-size: 1.2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+.ready-btn.is-ready {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: var(--bg-0);
+}
+
+.hint { text-align: center; color: var(--text-dim); font-size: 0.9rem; margin: 0; }

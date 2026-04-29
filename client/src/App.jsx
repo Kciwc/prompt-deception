@@ -1,24 +1,17 @@
-import './App.css';
-import { useSocketStatus } from './hooks/useSocketStatus';
-import { SERVER_URL } from './lib/socket';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LobbyBrowser from './pages/LobbyBrowser';
+import TVHost from './pages/TVHost';
+import PlayerRoom from './pages/PlayerRoom';
 
 function App() {
-  const isConnected = useSocketStatus();
-
   return (
-    <main className="app-shell">
-      <h1 className="brand">Ceyon's Super Spiffy Trivia</h1>
-      <p style={{ color: 'var(--text-dim)', maxWidth: '36ch' }}>
-        Scaffolding only — lobby browser, rooms, and gameplay land in step 2.
-      </p>
-      <div className="status-pill">
-        <span className={`status-dot ${isConnected ? 'online' : 'offline'}`} />
-        Server: {isConnected ? 'connected' : 'disconnected'}
-        <code style={{ color: 'var(--text-dim)', fontSize: '0.8em', marginLeft: '0.5em' }}>
-          {SERVER_URL}
-        </code>
-      </div>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LobbyBrowser />} />
+        <Route path="/screen" element={<TVHost />} />
+        <Route path="/room/:code" element={<PlayerRoom />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
