@@ -24,10 +24,27 @@ function urlFor(key) {
   return `/uploads/${key}`;
 }
 
+async function getJson(key) {
+  try {
+    const text = await fs.readFile(path.join(UPLOADS_DIR, key), 'utf8');
+    return JSON.parse(text);
+  } catch (err) {
+    if (err?.code === 'ENOENT') return null;
+    throw err;
+  }
+}
+
+async function putJson(key, obj) {
+  await ensureDir();
+  await fs.writeFile(path.join(UPLOADS_DIR, key), JSON.stringify(obj, null, 2));
+}
+
 module.exports = {
   kind: 'local',
   put,
   remove,
   urlFor,
+  getJson,
+  putJson,
   uploadsDir: UPLOADS_DIR,
 };

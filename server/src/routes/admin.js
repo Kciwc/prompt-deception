@@ -52,7 +52,7 @@ router.post('/upload', requireAdmin, uploadSingleImage, async (req, res) => {
 
     await storage.put(key, webp, 'image/webp');
 
-    const entry = contentLibrary.add({
+    const entry = await contentLibrary.add({
       imageKey: key,
       imageUrl: storage.urlFor(key),
       realPrompt,
@@ -69,7 +69,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
   const all = contentLibrary.list();
   const entry = all.find((e) => e.id === req.params.id);
   if (!entry) return res.status(404).json({ error: 'not_found' });
-  contentLibrary.remove(entry.id);
+  await contentLibrary.remove(entry.id);
   try { await storage.remove(entry.imageKey); } catch (err) {
     console.warn('[admin/delete] storage.remove failed:', err.message);
   }

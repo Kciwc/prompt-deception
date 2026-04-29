@@ -1,5 +1,5 @@
 // Cloudflare R2 is S3-compatible. We use the AWS SDK client with R2's endpoint.
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { r2 } = require('../config');
 
 const client = new S3Client({
@@ -38,9 +38,40 @@ function urlFor(key) {
   return `${r2.publicUrl}/${key}`;
 }
 
+async function getJson(key) {
+  try {
+    const res = await client.send(new GetObjectCommand({
+      Bucket: r2.bucket,
+      Key: key,
+    }));
+    const text = await res.Body.transformToString();
+    return JSON.parse(text);
+  } catch (err) {
+    const status = err?.$metadata?.httpStatusCode;
+    if (status === 404 || err?.Code === 'NoSuchKey' || err?.name === 'NoSuchKey') {
+      return null;
+    }
+    throw err;
+  }
+}
+
+async function putJson(key, obj) {
+  const body = Buffer.from(JSON.stringify(obj));
+  await client.send(new PutObjectCommand({
+    Bucket: r2.bucket,
+    Key: key,
+    Body: body,
+    ContentType: 'application/json',
+    // Manifests change frequently — don't let CDN cache them.
+    CacheControl: 'no-cache, max-age=0',
+  }));
+}
+
 module.exports = {
   kind: 'r2',
   put,
   remove,
   urlFor,
+  getJson,
+  putJson,
 };

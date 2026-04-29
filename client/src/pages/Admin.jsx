@@ -184,7 +184,7 @@ export default function Admin() {
       </section>
 
       <p className="footnote muted">
-        Step 5 swaps this in-memory store for Postgres + Cloudflare R2.
+        Library is persisted to <code>library-manifest.json</code> in your storage backend, so it survives server restarts.
       </p>
     </main>
   );

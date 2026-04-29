@@ -9,6 +9,7 @@ const config = require('./config');
 const { registerSocketHandlers } = require('./socket');
 const { adminRouter } = require('./routes/admin');
 const storage = require('./storage');
+const contentLibrary = require('./db/contentLibrary');
 
 const app = express();
 app.use(cors({ origin: config.clientOrigin === '*' ? true : config.clientOrigin }));
@@ -56,6 +57,13 @@ registerSocketHandlers(io);
 
 server.listen(config.port, '0.0.0.0', () => {
   console.log(`[server] listening on :${config.port} (origin=${config.clientOrigin})`);
+});
+
+// Hydrate content library from the persistent manifest. Doesn't block
+// the listen call — admin requests will hit the empty library briefly
+// during startup if a deploy lands during a request, which is fine.
+contentLibrary.init().catch((err) => {
+  console.error('[server] contentLibrary.init failed:', err);
 });
 
 const shutdown = (signal) => () => {
