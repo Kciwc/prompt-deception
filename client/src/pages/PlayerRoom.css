@@ -57,7 +57,32 @@
   font-size: 0.95rem;
   color: var(--text-dim);
 }
+.player-header .header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
 .my-name { color: var(--text); font-weight: 600; }
+
+.nudge-flash {
+  position: fixed;
+  top: 3.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--team-3);
+  color: var(--bg-0);
+  font-weight: 700;
+  padding: 0.6em 1.1em;
+  border-radius: 999px;
+  z-index: 50;
+  animation: nudge-pop 1.6s ease-out forwards;
+}
+@keyframes nudge-pop {
+  0%   { opacity: 0; transform: translate(-50%, -10px); }
+  20%  { opacity: 1; transform: translate(-50%, 0); }
+  85%  { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -10px); }
+}
 
 .prompt { text-align: center; margin: 0; }
 

@@ -41,6 +41,22 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+.vote-list li {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+.vote-list li > .vote-btn { flex: 1; }
+
+.nudge-btn {
+  background: rgba(255, 179, 0, 0.18);
+  color: var(--team-3);
+  font-size: 1.2rem;
+  padding: 0 0.85em;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.nudge-btn:hover { background: rgba(255, 179, 0, 0.3); transform: none; box-shadow: none; }
 
 .vote-btn {
   display: flex;

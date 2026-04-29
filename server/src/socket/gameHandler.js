@@ -69,6 +69,24 @@ function attachGameHandlers(io, socket) {
     });
   });
 
+  socket.on('nudge:send', ({ targetPlayerId } = {}, ack) => {
+    withPlayer(ack, (room, playerId) => {
+      // Phase 2 only — nudging is for teammates who haven't voted yet.
+      if (room.phase !== 2) return ack?.({ ok: false, error: 'wrong_phase' });
+      const target = room.players.get(targetPlayerId);
+      const sender = room.players.get(playerId);
+      if (!target || !sender) return ack?.({ ok: false, error: 'no_target' });
+      if (target.teamSlot !== sender.teamSlot) {
+        return ack?.({ ok: false, error: 'cross_team_nudge' });
+      }
+      const targetSock = target.socketId && io.sockets.sockets.get(target.socketId);
+      if (targetSock) {
+        targetSock.emit('nudge:receive', { fromName: sender.name });
+      }
+      ack?.({ ok: true });
+    });
+  });
+
   socket.on('feedback:submit', ({ thumbs } = {}, ack) => {
     withPlayer(ack, (room, playerId) => {
       if (room.phase !== 4) return ack?.({ ok: false, error: 'wrong_phase' });

@@ -13,6 +13,8 @@ import {
 } from '../components/PhaseInputs';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useBeforeUnload } from '../hooks/useBeforeUnload';
+import { usePhaseAudio } from '../hooks/usePhaseAudio';
+import { PlayerMuteToggle } from '../components/AudioControls';
 import { uploadUrl } from '../lib/api';
 import './PlayerRoom.css';
 
@@ -41,6 +43,20 @@ export default function PlayerRoom() {
   // Keep phone awake during active play. Warn before accidental swipe-back.
   useWakeLock(joined && room?.status === 'playing');
   useBeforeUnload(joined && room?.status === 'playing');
+  usePhaseAudio(joined ? room : null);
+
+  // Haptic vibration + a small visual cue when a teammate nudges.
+  const [nudgeFlash, setNudgeFlash] = useState(null);
+  useEffect(() => {
+    if (!joined) return;
+    function onNudge({ fromName }) {
+      if (typeof navigator?.vibrate === 'function') navigator.vibrate([120, 60, 120]);
+      setNudgeFlash(fromName ?? 'A teammate');
+      setTimeout(() => setNudgeFlash(null), 1600);
+    }
+    socket.on('nudge:receive', onNudge);
+    return () => socket.off('nudge:receive', onNudge);
+  }, [joined]);
 
   function submitName(e) {
     e.preventDefault();
@@ -138,8 +154,15 @@ export default function PlayerRoom() {
 
       <header className="player-header">
         <span className="room-tag">Room {code}</span>
-        {me && <span className="my-name">{me.name}</span>}
+        <div className="header-right">
+          {me && <span className="my-name">{me.name}</span>}
+          <PlayerMuteToggle />
+        </div>
       </header>
+
+      {nudgeFlash && (
+        <div className="nudge-flash">👀 {nudgeFlash} is nudging you!</div>
+      )}
 
       {room.status === 'lobby' && <LobbyView room={room} me={me} />}
       {room.status === 'playing' && <PlayingView room={room} me={me} />}

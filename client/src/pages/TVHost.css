@@ -236,6 +236,61 @@
 .tv-team-pill.tv-team-amber   { border-color: var(--team-3); }
 
 .tv-footer { display: flex; flex-direction: column; gap: 0.5rem; }
+.tv-footer-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tv-team li {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+.kick-btn {
+  background: rgba(255, 77, 109, 0.18);
+  color: var(--danger);
+  font-size: 0.9rem;
+  padding: 0.05em 0.55em;
+  border-radius: 8px;
+  line-height: 1;
+}
+.kick-btn:hover { background: rgba(255, 77, 109, 0.3); transform: none; box-shadow: none; }
+
+.pair-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.pair-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 2rem;
+}
+.pair-card {
+  background: var(--bg-1);
+  border-radius: 18px;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  max-width: 380px;
+}
+.pair-card h2 { margin: 0; }
+.pair-card p { margin: 0; color: var(--text-dim); }
+.pair-card code { font-size: 0.75rem; word-break: break-all; }
 .ready-bar {
   height: 18px;
   border-radius: 999px;

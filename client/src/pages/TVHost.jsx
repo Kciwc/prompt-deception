@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { socket } from '../lib/socket';
 import { loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
@@ -7,7 +8,9 @@ import { QRBlock } from '../components/QRBlock';
 import { PhaseTimer } from '../components/PhaseTimer';
 import { HostControls } from '../components/HostControls';
 import { RevealPanel } from '../components/RevealPanel';
+import { HostAudioControls } from '../components/AudioControls';
 import { useWakeLock } from '../hooks/useWakeLock';
+import { usePhaseAudio } from '../hooks/usePhaseAudio';
 import { uploadUrl } from '../lib/api';
 import './TVHost.css';
 
@@ -28,6 +31,7 @@ export default function TVHost() {
   const room = useRoomState();
 
   useWakeLock(attached);
+  usePhaseAudio(room);
 
   useEffect(() => {
     if (!code) {
@@ -53,6 +57,19 @@ export default function TVHost() {
     if (!code) return '';
     return `${window.location.origin}/?room=${code}`;
   }, [code]);
+
+  const remoteUrl = useMemo(() => {
+    if (!code) return '';
+    const token = loadHostToken(code);
+    if (!token) return '';
+    return `${window.location.origin}/screen/remote?code=${code}&token=${encodeURIComponent(token)}`;
+  }, [code, attached]);
+
+  const [showPairing, setShowPairing] = useState(false);
+  function kickPlayer(playerId, name) {
+    if (!confirm(`Kick ${name}?`)) return;
+    socket.emit('host:kick-player', { playerId });
+  }
 
   if (err) return <div className="tv-shell error"><h1>{err}</h1></div>;
   if (!attached || !room) return <div className="tv-shell"><h1>Connecting…</h1></div>;
@@ -89,7 +106,14 @@ export default function TVHost() {
                   <ul>
                     {players.map((p) => (
                       <li key={p.id} className={p.ready ? 'ready' : ''}>
-                        {p.name}{p.ready && ' ✓'}
+                        <span>{p.name}{p.ready && ' ✓'}</span>
+                        <button
+                          className="kick-btn"
+                          onClick={() => kickPlayer(p.id, p.name)}
+                          title="Kick"
+                        >
+                          ×
+                        </button>
                       </li>
                     ))}
                     {players.length === 0 && <li className="empty">— waiting —</li>}
@@ -159,7 +183,29 @@ export default function TVHost() {
 
       <footer className="tv-footer">
         <HostControls room={room} />
+        <div className="tv-footer-row">
+          <HostAudioControls />
+          {remoteUrl && (
+            <button className="pair-btn" onClick={() => setShowPairing((s) => !s)}>
+              📱 {showPairing ? 'Hide' : 'Pair phone remote'}
+            </button>
+          )}
+        </div>
       </footer>
+
+      {showPairing && remoteUrl && (
+        <div className="pair-overlay" onClick={() => setShowPairing(false)}>
+          <div className="pair-card" onClick={(e) => e.stopPropagation()}>
+            <h2>Scan on a phone</h2>
+            <p>Pairs that phone as a remote control for this TV.</p>
+            <div style={{ background: '#fff', padding: '1rem', borderRadius: 12 }}>
+              <QRCodeSVG value={remoteUrl} size={220} level="H" />
+            </div>
+            <p className="muted">Or open: <code>{remoteUrl.replace(/token=[^&]+/, 'token=…')}</code></p>
+            <button onClick={() => setShowPairing(false)}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

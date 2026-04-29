@@ -116,6 +116,10 @@ export function Phase2IntraVote({ round }) {
     );
   }
 
+  function nudge(pid) {
+    socket.emit('nudge:send', { targetPlayerId: pid });
+  }
+
   return (
     <section className="phase-input">
       <h2>Pick your team's entry</h2>
@@ -132,6 +136,16 @@ export function Phase2IntraVote({ round }) {
               {c.isMine && <span className="badge">yours</span>}
               {myVote === c.pid && <span className="badge">voted</span>}
             </button>
+            {!c.isMine && (
+              <button
+                type="button"
+                className="nudge-btn"
+                title="Nudge this teammate"
+                onClick={(e) => { e.stopPropagation(); nudge(c.pid); }}
+              >
+                👋
+              </button>
+            )}
           </li>
         ))}
       </ul>
