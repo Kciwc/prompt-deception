@@ -154,7 +154,17 @@ export default function Admin() {
       <section className="admin-list">
         <h2>Library ({items.length})</h2>
         {items.length === 0 ? (
-          <p className="muted">Nothing uploaded yet.</p>
+          <div className="empty-state">
+            <div className="icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+              </svg>
+            </div>
+            <h3>Library is empty</h3>
+            <p>Upload an image and a real prompt above to add a round.</p>
+          </div>
         ) : (
           <ul>
             {items.map((it) => (

@@ -137,6 +137,60 @@ class AudioManager {
     this._tone({ freq: 165, dur: 0.5, attack: 0.005, release: 0.35, t: t0 + 0.18, volume: 0.4, type: 'sawtooth' });
   }
 
+  // Vote cast — quick high "ping".
+  voteTick() {
+    if (!this.ctx) return;
+    this._tone({ freq: 1320, dur: 0.05, attack: 0.001, release: 0.04, t: this.ctx.currentTime, volume: 0.2, type: 'triangle' });
+  }
+
+  // Bluff submitted — soft confirm.
+  bluffConfirm() {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    this._tone({ freq: 660, dur: 0.08, attack: 0.002, release: 0.07, t: t0,        volume: 0.18, type: 'sine' });
+    this._tone({ freq: 880, dur: 0.10, attack: 0.002, release: 0.09, t: t0 + 0.05, volume: 0.18, type: 'sine' });
+  }
+
+  // Host UI click — short percussive.
+  click() {
+    if (!this.ctx) return;
+    this._tone({ freq: 800, dur: 0.04, attack: 0.001, release: 0.035, t: this.ctx.currentTime, volume: 0.15, type: 'square' });
+  }
+
+  // Score bump — bright two-note rise.
+  scoreBump() {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    this._tone({ freq: 880,  dur: 0.10, attack: 0.002, release: 0.08, t: t0,        volume: 0.35, type: 'triangle' });
+    this._tone({ freq: 1320, dur: 0.12, attack: 0.002, release: 0.10, t: t0 + 0.06, volume: 0.35, type: 'triangle' });
+  }
+
+  // Drumroll — used before podium / MVP reveals.
+  drumroll(durationMs = 1200) {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    const totalDur = durationMs / 1000;
+    const hits = Math.max(8, Math.floor(durationMs / 70));
+    for (let i = 0; i < hits; i++) {
+      const t = t0 + (i / hits) * totalDur;
+      const v = 0.08 + (i / hits) * 0.18; // crescendo
+      this._tone({ freq: 80 + Math.random() * 30, dur: 0.05, attack: 0.001, release: 0.04, t, volume: v, type: 'square' });
+    }
+  }
+
+  // Podium fanfare — celebratory three-note triumphant chord.
+  fanfare() {
+    if (!this.ctx) return;
+    const t0 = this.ctx.currentTime;
+    [
+      [523, 0],     [659, 0],     [784, 0],     // C major chord
+      [659, 0.15],  [784, 0.15],  [988, 0.15],  // E minor-ish lift
+      [784, 0.32],  [988, 0.32],  [1175, 0.32], // climax
+    ].forEach(([f, off]) => {
+      this._tone({ freq: f, dur: 0.55 - off * 0.5, attack: 0.005, release: 0.45, t: t0 + off, volume: 0.32, type: 'triangle' });
+    });
+  }
+
   _tone({ freq, dur, attack, release, t, volume, type = 'sine' }) {
     if (!this.ctx) return;
     const osc = this.ctx.createOscillator();

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { ThumbsUp, ThumbsDown, Hand, Mic, Check, X } from 'lucide-react';
 import { socket } from '../lib/socket';
 import { Confetti } from './Confetti';
+import { audioManager } from '../audio/AudioManager';
 import './PhaseInputs.css';
 
 const MIN_BLUFF_FINAL = 5;
@@ -51,11 +53,13 @@ export function Phase1WriteAndVote({ round }) {
       socket.emit('intra-vote:clear');
     } else {
       socket.emit('intra-vote:cast', { targetPlayerId: targetPid });
+      audioManager.voteTick();
     }
   }
 
   function nudge(targetPid) {
     socket.emit('nudge:send', { targetPlayerId: targetPid });
+    audioManager.click();
   }
 
   const draftLen = visibleLen(draft);
@@ -122,7 +126,7 @@ export function Phase1WriteAndVote({ round }) {
                     title="Nudge this teammate"
                     onClick={(e) => { e.stopPropagation(); nudge(b.pid); }}
                   >
-                    👋
+                    <Hand size={18} />
                   </button>
                 </li>
               );
@@ -150,6 +154,7 @@ export function Phase2MainVote({ round, myTeamSlot }) {
     if (now - lastClickRef.current < 300) return;
     lastClickRef.current = now;
     socket.emit('main-vote:cast', { candidate: candidateId });
+    audioManager.voteTick();
   }
 
   return (
@@ -212,6 +217,7 @@ export function Phase3RevealAndFeedback({ round, room }) {
       socket.emit('trashtalk:clear');
     } else {
       socket.emit('trashtalk:vote', { targetPlayerId: targetPid });
+      audioManager.voteTick();
     }
   }
 
@@ -234,7 +240,10 @@ export function Phase3RevealAndFeedback({ round, room }) {
 
       {trashTalkEnabled && otherPlayers.length > 0 && (
         <div className="trash-talk-block">
-          <h3 className="section-h">🎤 Trash Talk MVP</h3>
+          <h3 className="section-h">
+            <Mic size={18} style={{ verticalAlign: '-3px', marginRight: '0.3em' }} />
+            Trash Talk MVP
+          </h3>
           <p className="muted small">Who's killing it on the call this round?</p>
           <ul className="trash-list">
             {otherPlayers.map((p) => {
@@ -248,7 +257,13 @@ export function Phase3RevealAndFeedback({ round, room }) {
                     onClick={() => trashTalkVote(p.id)}
                   >
                     <span className="name">{p.name}</span>
-                    <span className="votes">{votes > 0 ? `${votes} 🎤` : ''}</span>
+                    <span className="votes">
+                      {votes > 0 && (
+                        <>
+                          {votes} <Mic size={12} style={{ verticalAlign: '-1px' }} />
+                        </>
+                      )}
+                    </span>
                   </button>
                 </li>
               );
@@ -259,10 +274,10 @@ export function Phase3RevealAndFeedback({ round, room }) {
 
       <div className="thumbs-row">
         <button className="thumb up" disabled={submittedThumbs} onClick={() => sendThumbs('up')}>
-          👍 Good round
+          <ThumbsUp size={18} /> Good round
         </button>
         <button className="thumb down" disabled={submittedThumbs} onClick={() => sendThumbs('down')}>
-          👎 Skip
+          <ThumbsDown size={18} /> Skip
         </button>
       </div>
       {submittedThumbs && <p className="muted">Thanks for the feedback.</p>}

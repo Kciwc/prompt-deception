@@ -6,9 +6,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0a14" />
     <title>Ceyon's Super Spiffy Trivia</title>
+    <style>
+      /* Inline splash so it renders before any CSS bundle loads. Hidden
+         the moment React hydrates (#root has children). */
+      html, body { background: #0a0a14; margin: 0; }
+      .pd-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        background:
+          radial-gradient(ellipse at top left, rgba(0, 229, 255, 0.14), transparent 50%),
+          radial-gradient(ellipse at top right, rgba(255, 43, 214, 0.12), transparent 50%),
+          radial-gradient(ellipse at bottom, rgba(255, 179, 0, 0.10), transparent 60%),
+          #0a0a14;
+        color: #f5f5fa;
+        font-family: system-ui, sans-serif;
+        z-index: 9999;
+        transition: opacity 280ms ease;
+      }
+      .pd-splash-title {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        font-weight: 800;
+        background: linear-gradient(90deg, #00e5ff, #ff2bd6, #ffb300);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -0.02em;
+      }
+      .pd-splash-spinner {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.12);
+        border-top-color: #00e5ff;
+        animation: pd-spin 0.9s linear infinite;
+      }
+      @keyframes pd-spin { to { transform: rotate(360deg); } }
+      /* Hide splash once React mounts something into #root. */
+      #root:not(:empty) ~ .pd-splash { opacity: 0; pointer-events: none; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    <div class="pd-splash" aria-hidden="true">
+      <div class="pd-splash-title">Ceyon's Super Spiffy Trivia</div>
+      <div class="pd-splash-spinner"></div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

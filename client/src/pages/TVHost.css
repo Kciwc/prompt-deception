@@ -5,8 +5,34 @@
   padding: 2rem 3rem;
   gap: 1.5rem;
   width: 100%;
-  /* TV view assumes 16:9 — sized to fill the viewport */
   min-height: 100vh;
+  position: relative;
+}
+
+/* Ambient drift overlay — slow-moving color blobs behind everything when
+   the lobby is idle. Uses transform animation, not background-position,
+   so it stays GPU-cheap. */
+.tv-shell::before {
+  content: '';
+  position: fixed;
+  inset: -10%;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle 380px at 25% 30%, rgba(0, 229, 255, 0.18), transparent 60%),
+    radial-gradient(circle 320px at 70% 25%, rgba(255, 43, 214, 0.16), transparent 60%),
+    radial-gradient(circle 360px at 50% 80%, rgba(255, 179, 0, 0.16), transparent 60%);
+  filter: blur(12px);
+  animation: tv-drift 22s ease-in-out infinite alternate;
+  opacity: 0.7;
+}
+@keyframes tv-drift {
+  0%   { transform: translate(0, 0)       scale(1); }
+  50%  { transform: translate(40px, 20px) scale(1.05); }
+  100% { transform: translate(-30px, -10px) scale(0.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-shell::before { animation: none; }
 }
 .tv-shell.error { align-items: center; justify-content: center; text-align: center; }
 
@@ -192,32 +218,7 @@
   border-radius: 8px;
 }
 
-.tv-podium {
-  flex: 1;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem;
-}
-.podium-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  border: 4px solid;
-  border-radius: 18px 18px 0 0;
-  background: rgba(255, 255, 255, 0.06);
-  padding: 1.5rem 2rem;
-  min-width: 180px;
-  flex: 1;
-  max-width: 240px;
-}
-.podium-step h3 { font-size: 1.4rem; }
-.podium-step .score { font-size: 3rem; font-weight: 800; }
-.podium-step.podium-step-0 { min-height: 320px; }
-.podium-step.podium-step-1 { min-height: 240px; }
-.podium-step.podium-step-2 { min-height: 180px; }
+/* Podium styles moved to ../components/Podium.css */
 
 .tv-side-stack {
   display: flex;
@@ -268,17 +269,7 @@
   flex-wrap: wrap;
   justify-content: center;
 }
-.tv-team-pill {
-  display: flex;
-  align-items: baseline;
-  gap: 0.6em;
-  padding: 0.5em 1.1em;
-  border-radius: 999px;
-  border: 3px solid;
-  background: rgba(255, 255, 255, 0.04);
-}
-.tv-team-pill .tname { font-weight: 600; font-size: 1.05rem; }
-.tv-team-pill .tscore { font-weight: 700; font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+/* Score pill base — animated styles in ../components/TeamScorePill.css */
 .tv-team-pill.tv-team-cyan    { border-color: var(--team-1); }
 .tv-team-pill.tv-team-magenta { border-color: var(--team-2); }
 .tv-team-pill.tv-team-amber   { border-color: var(--team-3); }

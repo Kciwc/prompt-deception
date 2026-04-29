@@ -14,6 +14,9 @@
   padding: 0.5em 1em;
   background: rgba(255, 255, 255, 0.12);
   color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
 }
 .host-controls button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.2);

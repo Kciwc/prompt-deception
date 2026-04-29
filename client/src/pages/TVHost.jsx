@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import { Smartphone, X as XIcon, Mic } from 'lucide-react';
 import { socket } from '../lib/socket';
 import { loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
@@ -10,8 +11,14 @@ import { HostControls } from '../components/HostControls';
 import { RevealPanel } from '../components/RevealPanel';
 import { HostAudioControls } from '../components/AudioControls';
 import { GameSettings } from '../components/GameSettings';
+import { TeamScorePill } from '../components/TeamScorePill';
+import { TVSkeleton } from '../components/Skeleton';
+import { PhaseWipe } from '../components/PhaseWipe';
+import { Podium } from '../components/Podium';
+import { useRoomToasts } from '../components/Toast';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { usePhaseAudio } from '../hooks/usePhaseAudio';
+import { usePhaseTint } from '../hooks/usePhaseTint';
 import { uploadUrl } from '../lib/api';
 import './TVHost.css';
 
@@ -32,6 +39,8 @@ export default function TVHost() {
 
   useWakeLock(attached);
   usePhaseAudio(room);
+  usePhaseTint(room);
+  useRoomToasts(room);
 
   useEffect(() => {
     if (!code) {
@@ -72,7 +81,7 @@ export default function TVHost() {
   }
 
   if (err) return <div className="tv-shell error"><h1>{err}</h1></div>;
-  if (!attached || !room) return <div className="tv-shell"><h1>Connecting…</h1></div>;
+  if (!attached || !room) return <div className="tv-shell"><TVSkeleton /></div>;
 
   const playersByTeam = (slot) => room.players.filter((p) => p.teamSlot === slot && p.isConnected);
   const inLobby = room.status === 'lobby';
@@ -81,8 +90,9 @@ export default function TVHost() {
 
   return (
     <div className="tv-shell">
+      <PhaseWipe room={room} />
       <header className="tv-header">
-        <h1 className="brand">Ceyon's Super Spiffy Trivia</h1>
+        <h1 className="brand display-font">Ceyon's Super Spiffy Trivia</h1>
         <div className="tv-room-meta">
           {playing
             ? `Round ${Math.max(1, room.completedNonTrashed)} of ${room.config.rounds}`
@@ -113,7 +123,7 @@ export default function TVHost() {
                           onClick={() => kickPlayer(p.id, p.name)}
                           title="Kick"
                         >
-                          ×
+                          <XIcon size={14} strokeWidth={3} />
                         </button>
                       </li>
                     ))}
@@ -164,10 +174,7 @@ export default function TVHost() {
 
           <div className="tv-team-strip">
             {room.teams.map((team) => (
-              <div key={team.slot} className={`tv-team-pill tv-team-${team.color}`}>
-                <span className="tname">{team.name}</span>
-                <span className="tscore">{team.score}</span>
-              </div>
+              <TeamScorePill key={team.slot} team={team} />
             ))}
             {room.config.trashTalkEnabled && room.trashTalkLeaderboard?.length > 0 && (
               <CumulativeTrashPill leaderboard={room.trashTalkLeaderboard} teams={room.teams} />
@@ -179,9 +186,9 @@ export default function TVHost() {
       {finished && (
         <section className="tv-play">
           <div className="tv-phase-header">
-            <h2>That's a wrap.</h2>
+            <h2 className="display-font">That's a wrap.</h2>
           </div>
-          <FinalPodium room={room} />
+          <Podium teams={room.teams} />
           {room.config.trashTalkEnabled && room.trashTalkLeaderboard?.length > 0 && (
             <TrashTalkMVPCallout leaderboard={room.trashTalkLeaderboard} teams={room.teams} />
           )}
@@ -194,7 +201,8 @@ export default function TVHost() {
           <HostAudioControls />
           {remoteUrl && (
             <button className="pair-btn" onClick={() => setShowPairing((s) => !s)}>
-              📱 {showPairing ? 'Hide' : 'Pair phone remote'}
+              <Smartphone size={16} style={{ marginRight: '0.4em', verticalAlign: '-3px' }} />
+              {showPairing ? 'Hide' : 'Pair phone remote'}
             </button>
           )}
         </div>
@@ -260,19 +268,21 @@ function TrashTalkRoundPanel({ room }) {
   if (entries.length === 0) {
     return (
       <div className="tv-progress trash-talk-tv">
-        <h3>🎤 Trash Talk</h3>
+        <h3><Mic size={18} style={{ verticalAlign: '-3px', marginRight: '0.3em' }} />Trash Talk</h3>
         <p className="muted">Vote for the funniest player on the call.</p>
       </div>
     );
   }
   return (
     <div className="tv-progress trash-talk-tv">
-      <h3>🎤 Trash Talk — this round</h3>
+      <h3><Mic size={18} style={{ verticalAlign: '-3px', marginRight: '0.3em' }} />Trash Talk — this round</h3>
       <ul>
         {entries.map((e, i) => (
           <li key={`${e.name}-${i}`}>
             <span className="tname">{e.name}</span>
-            <span className="count">{e.count} 🎤</span>
+            <span className="count">
+              {e.count} <Mic size={14} style={{ verticalAlign: '-2px' }} />
+            </span>
           </li>
         ))}
       </ul>
@@ -286,20 +296,25 @@ function CumulativeTrashPill({ leaderboard, teams }) {
   const color = teams.find((t) => t.slot === top.teamSlot)?.color ?? 'neutral';
   return (
     <div className={`tv-team-pill cumulative-pill tv-team-${color}`} title="Cumulative Trash Talk leader">
-      <span className="tname">🎤 {top.name}</span>
+      <span className="tname">
+        <Mic size={14} style={{ verticalAlign: '-2px', marginRight: '0.3em' }} />
+        {top.name}
+      </span>
       <span className="tscore">{top.votes}</span>
     </div>
   );
 }
 
 function TrashTalkMVPCallout({ leaderboard, teams }) {
-  // Find the top score and everyone tied with it.
   const top = leaderboard[0];
   if (!top || top.votes === 0) return null;
   const winners = leaderboard.filter((e) => e.votes === top.votes);
   return (
     <div className="trash-mvp-callout">
-      <div className="trash-mvp-title">🎤 Trash Talk MVP</div>
+      <div className="trash-mvp-title display-font">
+        <Mic size={26} style={{ verticalAlign: '-4px', marginRight: '0.4em' }} />
+        Trash Talk MVP
+      </div>
       <div className="trash-mvp-winners">
         {winners.map((w) => {
           const color = teams.find((t) => t.slot === w.teamSlot)?.color ?? 'neutral';
@@ -328,34 +343,6 @@ function CandidatesPanel({ room }) {
           </li>
         ))}
       </ol>
-    </div>
-  );
-}
-
-function FinalPodium({ room }) {
-  const ranked = [...room.teams].sort((a, b) => b.score - a.score);
-  // Visual podium: tied teams share the same step.
-  const stepFor = (i, score) => {
-    let step = 0;
-    let prevScore = null;
-    for (let k = 0; k < ranked.length; k++) {
-      if (prevScore !== null && ranked[k].score < prevScore) step++;
-      if (k === i) return step;
-      prevScore = ranked[k].score;
-    }
-    return step;
-  };
-  return (
-    <div className="tv-podium">
-      {ranked.map((t, i) => (
-        <div
-          key={t.slot}
-          className={`podium-step podium-step-${stepFor(i, t.score)} tv-team-${t.color}`}
-        >
-          <h3>{t.name}</h3>
-          <span className="score">{t.score}</span>
-        </div>
-      ))}
     </div>
   );
 }

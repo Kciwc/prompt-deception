@@ -13,7 +13,11 @@ import {
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useBeforeUnload } from '../hooks/useBeforeUnload';
 import { usePhaseAudio } from '../hooks/usePhaseAudio';
+import { usePhaseTint } from '../hooks/usePhaseTint';
 import { PlayerMuteToggle } from '../components/AudioControls';
+import { PlayerRoomSkeleton } from '../components/Skeleton';
+import { PhaseWipe } from '../components/PhaseWipe';
+import { useRoomToasts } from '../components/Toast';
 import { uploadUrl } from '../lib/api';
 import './PlayerRoom.css';
 
@@ -42,6 +46,8 @@ export default function PlayerRoom() {
   useWakeLock(joined && room?.status === 'playing');
   useBeforeUnload(joined && room?.status === 'playing');
   usePhaseAudio(joined ? room : null);
+  usePhaseTint(joined ? room : null);
+  useRoomToasts(joined ? room : null);
 
   // Haptic vibration + a small visual cue when a teammate nudges.
   const [nudgeFlash, setNudgeFlash] = useState(null);
@@ -107,7 +113,7 @@ export default function PlayerRoom() {
   if (!joined) {
     return (
       <main className="player-shell">
-        <h1 className="room-code">Room <span>{code}</span></h1>
+        <h1 className="room-code">Room <span className="display-font">{code}</span></h1>
         <form onSubmit={submitName} className="name-form">
           <label htmlFor="name">Your name</label>
           <input
@@ -130,7 +136,7 @@ export default function PlayerRoom() {
   }
 
   if (!room) {
-    return <main className="player-shell"><p>Loading room…</p></main>;
+    return <main className="player-shell"><PlayerRoomSkeleton /></main>;
   }
 
   const me = room.players.find((p) => p.isMe);
@@ -138,6 +144,7 @@ export default function PlayerRoom() {
 
   return (
     <main className={`player-shell themed theme-${myColor ?? 'neutral'}`}>
+      <PhaseWipe room={room} />
       {room.status !== 'lobby' && (
         <div className="pinned-timer">
           <span className="phase-label">{PHASE_TITLES[room.phase] ?? ''}</span>

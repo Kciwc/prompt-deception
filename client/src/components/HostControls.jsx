@@ -1,6 +1,13 @@
 import { useEffect } from 'react';
+import { Play, Pause, Plus, Trash2, Undo2, Square } from 'lucide-react';
 import { socket } from '../lib/socket';
+import { audioManager } from '../audio/AudioManager';
 import './HostControls.css';
+
+function emit(event, payload) {
+  audioManager.click();
+  socket.emit(event, payload);
+}
 
 export function HostControls({ room }) {
   const inLobby = room.status === 'lobby';
@@ -43,7 +50,7 @@ export function HostControls({ room }) {
         <button
           className="primary big"
           disabled={!canStart}
-          onClick={() => socket.emit('host:start-game')}
+          onClick={() => emit('host:start-game')}
         >
           {connected.length === 0
             ? 'Waiting for players…'
@@ -59,16 +66,22 @@ export function HostControls({ room }) {
   if (playing) {
     return (
       <div className="host-controls">
-        <button onClick={() => socket.emit(room.paused ? 'host:resume' : 'host:pause')}>
-          {room.paused ? 'Resume' : 'Pause'}
+        <button onClick={() => emit(room.paused ? 'host:resume' : 'host:pause')}>
+          {room.paused
+            ? <><Play size={14} /> Resume</>
+            : <><Pause size={14} /> Pause</>}
         </button>
-        <button onClick={() => socket.emit('host:add-seconds', { seconds: 15 })}>+15s</button>
-        <button onClick={() => socket.emit('host:trash-round')} className="warn">
-          Trash Round
+        <button onClick={() => emit('host:add-seconds', { seconds: 15 })}>
+          <Plus size={14} /> 15s
         </button>
-        <button onClick={() => socket.emit('host:undo-phase')}>Undo Phase</button>
-        <button onClick={() => socket.emit('host:end-game')} className="danger">
-          End Game
+        <button onClick={() => emit('host:trash-round')} className="warn">
+          <Trash2 size={14} /> Trash
+        </button>
+        <button onClick={() => emit('host:undo-phase')}>
+          <Undo2 size={14} /> Undo
+        </button>
+        <button onClick={() => emit('host:end-game')} className="danger">
+          <Square size={14} /> End Game
         </button>
         <span className="kbd-hint">Space pause · → +15s · T trash · U undo</span>
       </div>
