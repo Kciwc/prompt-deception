@@ -15,7 +15,15 @@ const app = express();
 app.use(cors({ origin: config.clientOrigin === '*' ? true : config.clientOrigin }));
 app.use(express.json({ limit: '64kb' }));
 
-app.get('/health', (_req, res) => res.json({ ok: true, uptime: process.uptime(), storage: storage.kind }));
+app.get('/health', (_req, res) => res.json({
+  ok: true,
+  uptime: process.uptime(),
+  storage: storage.kind,
+  // Railway injects RAILWAY_GIT_COMMIT_SHA at build time; falls back to
+  // GIT_COMMIT_SHA or 'unknown' if not running on Railway.
+  commit: (process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || 'unknown').slice(0, 7),
+  deployedAt: process.env.RAILWAY_DEPLOYMENT_CREATED_AT || null,
+}));
 
 if (storage.kind === 'local') {
   app.use('/uploads', express.static(storage.uploadsDir, { maxAge: '7d' }));
