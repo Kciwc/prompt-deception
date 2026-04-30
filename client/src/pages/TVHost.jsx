@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Smartphone, X as XIcon, Mic, RotateCcw, BookOpen } from 'lucide-react';
-import { socket } from '../lib/socket';
+import { socket, SERVER_URL } from '../lib/socket';
 import { loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
 import { QRBlock } from '../components/QRBlock';
@@ -36,12 +36,28 @@ export default function TVHost() {
   const code = params.get('code')?.toUpperCase();
   const [attached, setAttached] = useState(false);
   const [err, setErr] = useState('');
+  const [portraitUrl, setPortraitUrl] = useState(null);
   const room = useRoomState();
 
   useWakeLock(attached);
   usePhaseAudio(room);
   usePhaseTint(room);
   useRoomToasts(room);
+
+  // Pull current branding once on mount. The portrait might be missing
+  // (no upload yet) — render-time guard hides the <img> in that case.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${SERVER_URL}/api/branding`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const url = data?.portrait?.imageUrl;
+        if (url) setPortraitUrl(url.startsWith('http') ? url : `${SERVER_URL}${url}`);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!code) {
@@ -118,12 +134,14 @@ export default function TVHost() {
       <PhaseWipe room={room} />
       <header className="tv-header">
         <div className="brand-block">
-          <img
-            src="/lana.png"
-            alt="Lana"
-            className="brand-portrait"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
+          {portraitUrl && (
+            <img
+              src={portraitUrl}
+              alt="Portrait"
+              className="brand-portrait"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          )}
           <div className="brand-text">
             <h1 className="brand display-font">Super Spiffy Non-Googleable Trivia</h1>
             <p className="brand-subtitle">— Lana Farwell Edition —</p>

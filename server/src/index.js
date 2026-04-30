@@ -10,6 +10,7 @@ const { registerSocketHandlers } = require('./socket');
 const { adminRouter } = require('./routes/admin');
 const storage = require('./storage');
 const contentLibrary = require('./db/contentLibrary');
+const branding = require('./db/branding');
 
 const app = express();
 app.use(cors({ origin: config.clientOrigin === '*' ? true : config.clientOrigin }));
@@ -19,11 +20,18 @@ app.get('/health', (_req, res) => res.json({
   ok: true,
   uptime: process.uptime(),
   storage: storage.kind,
-  // Railway injects RAILWAY_GIT_COMMIT_SHA at build time; falls back to
-  // GIT_COMMIT_SHA or 'unknown' if not running on Railway.
   commit: (process.env.RAILWAY_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || 'unknown').slice(0, 7),
   deployedAt: process.env.RAILWAY_DEPLOYMENT_CREATED_AT || null,
 }));
+
+// Public branding info — read-only, no auth. Returns just the URL fields
+// the client UI needs. The TV uses this to render the header portrait.
+app.get('/api/branding', (_req, res) => {
+  const p = branding.getPortrait();
+  res.json({
+    portrait: p ? { imageUrl: p.imageUrl, uploadedAt: p.uploadedAt } : null,
+  });
+});
 
 if (storage.kind === 'local') {
   app.use('/uploads', express.static(storage.uploadsDir, { maxAge: '7d' }));
@@ -72,6 +80,9 @@ server.listen(config.port, '0.0.0.0', () => {
 // during startup if a deploy lands during a request, which is fine.
 contentLibrary.init().catch((err) => {
   console.error('[server] contentLibrary.init failed:', err);
+});
+branding.init().catch((err) => {
+  console.error('[server] branding.init failed:', err);
 });
 
 const shutdown = (signal) => () => {

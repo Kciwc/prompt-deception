@@ -21,6 +21,7 @@ export default function Admin() {
   const [password, setPassword] = useState(() => sessionStorage.getItem(PW_KEY) ?? '');
   const [authed, setAuthed] = useState(false);
   const [items, setItems] = useState([]);
+  const [portrait, setPortrait] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -32,6 +33,11 @@ export default function Admin() {
       const data = await adminFetch('/admin/list', { password });
       sessionStorage.setItem(PW_KEY, password);
       setItems(data.items);
+      // Pull current branding too — best effort, don't block login on it.
+      try {
+        const b = await adminFetch('/admin/branding/portrait', { password });
+        setPortrait(b.portrait);
+      } catch (_) {}
       setAuthed(true);
     } catch (err) {
       setError(err.message === 'unauthorized' ? 'Wrong password.' : err.message);
@@ -40,9 +46,14 @@ export default function Admin() {
     }
   }
 
-  async function refresh() {
+  async function refreshLibrary() {
     const data = await adminFetch('/admin/list', { password });
     setItems(data.items);
+  }
+
+  async function refreshPortrait() {
+    const b = await adminFetch('/admin/branding/portrait', { password });
+    setPortrait(b.portrait);
   }
 
   async function handleUpload(e) {
@@ -62,7 +73,7 @@ export default function Admin() {
         isFormData: true,
       });
       e.target.reset();
-      await refresh();
+      await refreshLibrary();
     } catch (err) {
       setError(prettyError(err.message));
     } finally {
@@ -75,7 +86,44 @@ export default function Admin() {
     setBusy(true);
     try {
       await adminFetch(`/admin/${id}`, { method: 'DELETE', password });
-      await refresh();
+      await refreshLibrary();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePortraitUpload(e) {
+    e.preventDefault();
+    setError('');
+    const form = new FormData(e.target);
+    const file = form.get('image');
+    if (!file || (file instanceof File && file.size === 0)) return;
+
+    setBusy(true);
+    try {
+      await adminFetch('/admin/branding/portrait', {
+        method: 'POST',
+        body: form,
+        password,
+        isFormData: true,
+      });
+      e.target.reset();
+      await refreshPortrait();
+    } catch (err) {
+      setError(prettyError(err.message));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePortraitDelete() {
+    if (!confirm('Remove the TV portrait?')) return;
+    setBusy(true);
+    try {
+      await adminFetch('/admin/branding/portrait', { method: 'DELETE', password });
+      setPortrait(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -85,7 +133,6 @@ export default function Admin() {
 
   useEffect(() => {
     if (password && !authed) {
-      // Auto-attempt login if we have a saved password.
       tryLogin();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,8 +174,43 @@ export default function Admin() {
         </button>
       </header>
 
+      <section className="admin-branding">
+        <h2>TV Portrait</h2>
+        <p className="muted">Shows next to the title on the TV header. One image, replaces the previous.</p>
+        <div className="branding-row">
+          <div className="branding-preview">
+            {portrait?.imageUrl ? (
+              <img src={uploadUrl(portrait.imageUrl)} alt="Current portrait" />
+            ) : (
+              <div className="branding-empty">No portrait set</div>
+            )}
+          </div>
+          <form onSubmit={handlePortraitUpload} className="branding-form">
+            <label>
+              Image
+              <input type="file" name="image" accept="image/*" required />
+            </label>
+            <div className="branding-actions">
+              <button type="submit" disabled={busy}>
+                {busy ? 'Uploading…' : portrait ? 'Replace' : 'Upload portrait'}
+              </button>
+              {portrait && (
+                <button
+                  type="button"
+                  className="danger"
+                  disabled={busy}
+                  onClick={handlePortraitDelete}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      </section>
+
       <section className="admin-upload">
-        <h2>Upload</h2>
+        <h2>Upload round content</h2>
         <form onSubmit={handleUpload}>
           <label>
             Image
@@ -184,7 +266,7 @@ export default function Admin() {
       </section>
 
       <p className="footnote muted">
-        Library is persisted to <code>library-manifest.json</code> in your storage backend, so it survives server restarts.
+        Library and branding are persisted to JSON manifests in your storage backend, so they survive server restarts.
       </p>
     </main>
   );

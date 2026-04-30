@@ -5,6 +5,7 @@ const sharp = require('sharp');
 
 const { requireAdmin } = require('../auth/admin');
 const contentLibrary = require('../db/contentLibrary');
+const branding = require('../db/branding');
 const storage = require('../storage');
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB raw — sharp recompresses to a much smaller WebP
@@ -65,6 +66,46 @@ router.post('/upload', requireAdmin, uploadSingleImage, async (req, res) => {
   }
 });
 
+// ────────────────────────────────────────────────────────────
+// Branding (TV portrait)
+// ────────────────────────────────────────────────────────────
+
+router.get('/branding/portrait', requireAdmin, (_req, res) => {
+  res.json({ portrait: branding.getPortrait() });
+});
+
+router.post('/branding/portrait', requireAdmin, uploadSingleImage, async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'no_file' });
+    const key = `branding-${Date.now()}-${crypto.randomBytes(4).toString('hex')}.webp`;
+    const webp = await sharp(req.file.buffer)
+      .rotate()
+      .resize({ width: 400, height: 400, fit: 'cover' })
+      .webp({ quality: 88 })
+      .toBuffer();
+    await storage.put(key, webp, 'image/webp');
+    const entry = await branding.setPortrait({
+      imageKey: key,
+      imageUrl: storage.urlFor(key),
+    });
+    res.json({ ok: true, portrait: entry });
+  } catch (err) {
+    console.error('[admin/branding/portrait]', err);
+    res.status(500).json({ error: 'upload_failed' });
+  }
+});
+
+router.delete('/branding/portrait', requireAdmin, async (_req, res) => {
+  try {
+    await branding.clearPortrait();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[admin/branding/portrait DELETE]', err);
+    res.status(500).json({ error: 'delete_failed' });
+  }
+});
+
+// Library item delete (id-keyed) — must come AFTER specific routes above.
 router.delete('/:id', requireAdmin, async (req, res) => {
   const all = contentLibrary.list();
   const entry = all.find((e) => e.id === req.params.id);
