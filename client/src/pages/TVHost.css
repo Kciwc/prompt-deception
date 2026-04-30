@@ -43,11 +43,38 @@
   gap: 1rem;
 }
 .tv-header .brand {
-  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  line-height: 1.1;
   background: linear-gradient(90deg, var(--team-1), var(--team-2), var(--team-3));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  flex: 1;
+}
+.brand-text { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.brand-portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--team-2);
+  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.3), 0 6px 20px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+.brand-subtitle {
+  margin: 0;
+  color: var(--team-3);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
 }
 .tv-room-meta { color: var(--text-dim); font-size: 1.1rem; }
 

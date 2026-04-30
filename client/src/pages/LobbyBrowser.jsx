@@ -52,7 +52,8 @@ export default function LobbyBrowser() {
 
   return (
     <main className="lobby-shell">
-      <h1 className="brand">Ceyon's Super Spiffy Trivia</h1>
+      <h1 className="brand">Super Spiffy Non-Googleable Trivia</h1>
+      <p className="brand-subtitle">— Lana Farwell Edition —</p>
       <p className="tagline">Bluff your way past your friends. AI never lies — your group does.</p>
 
       <section className="primary-actions">

@@ -120,7 +120,7 @@ export default function PlayerRoom() {
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 24))}
-            placeholder="e.g. Ceyon"
+            placeholder="e.g. Lana"
             autoComplete="off"
             spellCheck="false"
             autoFocus

@@ -18,6 +18,14 @@
   -webkit-text-fill-color: transparent;
   text-align: center;
 }
+.brand-subtitle {
+  margin: -0.4rem 0 0;
+  color: var(--team-3);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
 .tagline { color: var(--text-dim); text-align: center; margin: 0; }
 
 .primary-actions {

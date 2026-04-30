@@ -117,7 +117,18 @@ export default function TVHost() {
     <div className="tv-shell">
       <PhaseWipe room={room} />
       <header className="tv-header">
-        <h1 className="brand display-font">Ceyon's Super Spiffy Trivia</h1>
+        <div className="brand-block">
+          <img
+            src="/lana.png"
+            alt="Lana"
+            className="brand-portrait"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+          <div className="brand-text">
+            <h1 className="brand display-font">Super Spiffy Non-Googleable Trivia</h1>
+            <p className="brand-subtitle">— Lana Farwell Edition —</p>
+          </div>
+        </div>
         <div className="tv-room-meta">
           {playing
             ? (room.currentRound?.isPractice
