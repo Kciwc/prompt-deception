@@ -51,6 +51,17 @@
 }
 .tv-room-meta { color: var(--text-dim); font-size: 1.1rem; }
 
+.practice-badge {
+  background: linear-gradient(135deg, var(--team-1), var(--team-2));
+  color: var(--bg-0);
+  padding: 0.25em 0.85em;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .tv-main {
   flex: 1;
   display: grid;

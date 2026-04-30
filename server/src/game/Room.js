@@ -30,6 +30,7 @@ class Room {
       speed: clampSpeed(config?.speed),
       doublePoints: !!config?.doublePoints,
       trashTalkEnabled: config?.trashTalkEnabled !== false, // default ON
+      practiceRound: !!config?.practiceRound, // default OFF; explicit opt-in
     };
 
     this.hostSocketId = null;
@@ -66,6 +67,8 @@ class Room {
     this.trashTalkLeaderboard = new Map();
     for (const team of this.teams) team.score = 0;
     for (const p of this.players.values()) p.ready = false;
+    // Practice round was for the first-game vibe — turn it off for replays.
+    this.config.practiceRound = false;
   }
 
   applyConfigPatch(patch) {
@@ -86,6 +89,10 @@ class Room {
     if (patch.trashTalkEnabled !== undefined) {
       const v = !!patch.trashTalkEnabled;
       if (v !== this.config.trashTalkEnabled) { this.config.trashTalkEnabled = v; changed = true; }
+    }
+    if (patch.practiceRound !== undefined) {
+      const v = !!patch.practiceRound;
+      if (v !== this.config.practiceRound) { this.config.practiceRound = v; changed = true; }
     }
     if (changed) {
       // Settings changed under players' feet — re-confirm readiness.

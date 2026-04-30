@@ -104,6 +104,17 @@
   margin: 0.5rem 0 0;
   font-weight: 700;
 }
+
+.practice-tip {
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.10), rgba(255, 43, 214, 0.08));
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+.practice-tip strong { color: var(--team-1); margin-right: 0.3em; }
 .small { font-size: 0.85rem; }
 
 .my-bluff {

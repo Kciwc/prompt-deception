@@ -45,7 +45,7 @@ function serializeForPlayer(room, audience) {
     teams: room.teams,
     players,
     currentRoundIdx: room.currentRoundIdx,
-    completedNonTrashed: room.rounds ? room.rounds.filter((r) => !r.trashed).length : 0,
+    completedNonTrashed: room.rounds ? room.rounds.filter((r) => !r.trashed && !r.isPractice).length : 0,
     trashTalkLeaderboard: serializeTrashTalkLeaderboard(room),
     viewer: { kind: audience.kind, playerId: audience.kind === 'player' ? audience.playerId : null },
   };
@@ -68,6 +68,7 @@ function serializeRound(room, audience) {
     imageKey: r.imageKey ?? null,
     imageUrl: r.imageUrl ?? null,
     trashed: !!r.trashed,
+    isPractice: !!r.isPractice,
   };
 
   // Phase 1 (write+vote, merged): teammates see each other's bluffs (with

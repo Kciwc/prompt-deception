@@ -98,6 +98,26 @@ export function GameSettings({ room, compact = false }) {
         </div>
       </div>
 
+      <div className="setting-row">
+        <span className="setting-label" title="Adds a free practice round at the start with extra explanations and Long timers. Doesn't count toward scores.">
+          📚 Practice round
+        </span>
+        <div className="seg toggle">
+          <button
+            type="button"
+            className={`seg-btn ${!cfg.practiceRound ? 'active' : ''}`}
+            onClick={() => patch({ practiceRound: false })}
+            disabled={!editable}
+          >Off</button>
+          <button
+            type="button"
+            className={`seg-btn ${cfg.practiceRound ? 'active' : ''}`}
+            onClick={() => patch({ practiceRound: true })}
+            disabled={!editable}
+          >On</button>
+        </div>
+      </div>
+
       <div className="setting-row est-row">
         <span className="setting-label">Estimated time</span>
         <span className="est-value">~{formatDuration(est)}</span>
@@ -113,7 +133,13 @@ export function GameSettings({ room, compact = false }) {
 function estimatedSeconds(cfg) {
   const s = SPEED[cfg.speed] ?? SPEED.standard;
   const perRound = s.p1 + s.p2 + s.p3;
-  return cfg.rounds * perRound + s.podium;
+  let total = cfg.rounds * perRound + s.podium;
+  if (cfg.practiceRound) {
+    // Practice round always uses Long timings.
+    const long = SPEED.long;
+    total += long.p1 + long.p2 + long.p3;
+  }
+  return total;
 }
 
 function formatDuration(seconds) {

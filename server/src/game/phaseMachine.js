@@ -25,8 +25,11 @@ const EMPTY_TEAM_BLUFF = 'no bluff';
 const MIN_BLUFF_FINAL_LEN = 5;
 const TRASH_TALK_PER_ROUND = 1; // a vote is worth 1 leaderboard point
 
-function durationFor(phase, speed = 'standard') {
-  const set = SPEED_DURATIONS[speed] ?? SPEED_DURATIONS.standard;
+function durationFor(phase, speed = 'standard', isPractice = false) {
+  // Practice rounds always use Long timings so players have room to read
+  // the explanation overlays and try things without pressure.
+  const effectiveSpeed = isPractice ? 'long' : speed;
+  const set = SPEED_DURATIONS[effectiveSpeed] ?? SPEED_DURATIONS.standard;
   const base = set[phase] ?? 30_000;
   return Math.max(1000, Math.round(base * (phaseScale || 1)));
 }
@@ -44,7 +47,8 @@ class PhaseMachine {
     this.room.status = 'playing';
     this.room.usedImageIds = [];
     this.room.currentRoundIdx = 0;
-    this.room.rounds = [this._makeRound()];
+    // First round is a practice round if the host enabled it.
+    this.room.rounds = [this._makeRound({ isPractice: !!this.room.config.practiceRound })];
     this._enterPhase(1);
     return true;
   }
@@ -163,10 +167,14 @@ class PhaseMachine {
   }
 
   _enterPhase(phase) {
-    // Phase-specific transition prep (computes derived round state).
+    const round = this.room.rounds[this.room.currentRoundIdx];
+    const isPractice = !!round?.isPractice;
+
+    // Phase-specific transition prep. Practice rounds skip scoring + trash
+    // talk tallying so they don't pollute the real game.
     if (phase === 2) this._finalizeTeamBluffs();
-    if (phase === 3) this._scoreRound();
-    if (phase === 4 && this.room.status === 'playing') {
+    if (phase === 3 && !isPractice) this._scoreRound();
+    if (phase === 4 && this.room.status === 'playing' && !isPractice) {
       this._tallyTrashTalkForCurrentRound();
     }
 
@@ -174,15 +182,12 @@ class PhaseMachine {
     this.room.phase = phase;
     this.room.paused = false;
     this.room.pausedRemainingMs = null;
-    const dur = durationFor(phase, this.room.config.speed);
+    const dur = durationFor(phase, this.room.config.speed, isPractice);
     this.room.phaseStartMs = Date.now();
     this.room.phaseDurationMs = dur;
     this.room.phaseDeadlineMs = this.room.phaseStartMs + dur;
     this._scheduleAdvance(dur);
 
-    // Spec: if the host has disconnected, finish the current phase on
-    // autopilot but auto-pause before the NEXT phase begins. Phase 4
-    // (podium) is end-state, so don't bother pausing there.
     if (!this.room.hostSocketId && phase < 4 && this.room.status === 'playing') {
       this.room.paused = true;
       this.room.pausedReason = 'host_disconnected';
@@ -207,7 +212,9 @@ class PhaseMachine {
   }
 
   _advanceToNextRoundOrPodium() {
-    const completedNonTrashed = this.room.rounds.filter((r) => !r.trashed).length;
+    // Practice rounds don't count toward the target.
+    const completedNonTrashed = this.room.rounds
+      .filter((r) => !r.trashed && !r.isPractice).length;
     const target = this.room.config.rounds;
     if (completedNonTrashed >= target) {
       this._enterPhase(4); // podium
@@ -218,7 +225,7 @@ class PhaseMachine {
     this._enterPhase(1);
   }
 
-  _makeRound() {
+  _makeRound({ isPractice = false } = {}) {
     const used = this.room.usedImageIds || [];
     const pick = contentLibrary.pickUnused(used);
     if (pick) {
@@ -231,7 +238,7 @@ class PhaseMachine {
       imageUrl: pick?.imageUrl ?? null,
       realPrompt: pick?.realPrompt ?? '(no content uploaded — visit /admin)',
       perPlayerBluffs: new Map(),
-      bluffTypingAt: new Map(), // playerId -> last bluff:submit timestamp
+      bluffTypingAt: new Map(),
       intraVotes: new Map(),
       teamBluffs: { 1: null, 2: null, 3: null },
       autoEmpty: { 1: false, 2: false, 3: false },
@@ -239,10 +246,11 @@ class PhaseMachine {
       feedback: new Map(),
       candidatesOrder: null,
       scoreDelta: null,
-      trashTalkVotes: new Map(),     // voterId -> targetPid (this round only)
-      trashTalkRoundCounts: null,    // populated at phase 3 end: {pid: count}
-      trashTalkRoundWinner: null,    // {playerId, votes} or null if no votes
+      trashTalkVotes: new Map(),
+      trashTalkRoundCounts: null,
+      trashTalkRoundWinner: null,
       trashed: false,
+      isPractice,
     };
   }
 

@@ -93,6 +93,15 @@ export function Phase1WriteAndVote({ round, room }) {
         Highest-voted entry submits when the timer ends.
       </p>
 
+      {round.isPractice && (
+        <div className="practice-tip">
+          <strong>📚 Practice round.</strong> Try writing something
+          ridiculous for the AI image. Don't worry about scoring — this
+          one doesn't count. Tap a teammate's draft to vote on it; the
+          one with the most votes becomes your team's entry.
+        </div>
+      )}
+
       <div className="my-bluff">
         <label>Your bluff</label>
         <textarea
@@ -185,6 +194,16 @@ export function Phase2MainVote({ round, myTeamSlot }) {
     <section className="phase-input">
       <h2>Spot the real prompt</h2>
       <p className="hint">One of these is the real AI prompt. Vote freely; you can change until the timer hits zero.</p>
+
+      {round.isPractice && (
+        <div className="practice-tip">
+          <strong>📚 Practice.</strong> Three of these are bluffs from the
+          other teams; one is the real prompt that made the image. You
+          can't vote for your own team's bluff (it's greyed out). No
+          points awarded — just get a feel for it.
+        </div>
+      )}
+
       <ul className="vote-list">
         {candidates.map((c) => {
           const isMyTeam = c.id === `team:${myTeamSlot}`;
@@ -257,10 +276,21 @@ export function Phase3RevealAndFeedback({ round, room }) {
       <p className="hint">
         {realRevealed
           ? guessedReal
-            ? 'You picked the real prompt. +2 for your team.'
+            ? round.isPractice
+              ? 'Nice — you spotted it! Real games would award you +2.'
+              : 'You picked the real prompt. +2 for your team.'
             : "You missed it — better luck next round."
           : 'Reveal in progress on the TV.'}
       </p>
+
+      {round.isPractice && (
+        <div className="practice-tip">
+          <strong>📚 Practice reveal.</strong> Watch the TV — bluffs flip
+          face-down first, then the real one drops with confetti. While
+          you wait, vote for whoever's been the funniest on the call. No
+          points this round.
+        </div>
+      )}
 
       {trashTalkEnabled && otherPlayers.length > 0 && (
         <div className="trash-talk-block">

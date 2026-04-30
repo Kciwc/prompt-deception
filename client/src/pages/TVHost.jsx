@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { Smartphone, X as XIcon, Mic, RotateCcw } from 'lucide-react';
+import { Smartphone, X as XIcon, Mic, RotateCcw, BookOpen } from 'lucide-react';
 import { socket } from '../lib/socket';
 import { loadHostToken } from '../lib/hostToken';
 import { useRoomState } from '../hooks/useRoomState';
@@ -15,6 +15,7 @@ import { TeamScorePill } from '../components/TeamScorePill';
 import { TVSkeleton } from '../components/Skeleton';
 import { PhaseWipe } from '../components/PhaseWipe';
 import { Podium } from '../components/Podium';
+import { RulesOverlay } from '../components/RulesOverlay';
 import { useRoomToasts } from '../components/Toast';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { usePhaseAudio } from '../hooks/usePhaseAudio';
@@ -75,6 +76,7 @@ export default function TVHost() {
   }, [code, attached]);
 
   const [showPairing, setShowPairing] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   // playerId of the player whose action menu is open, or null
   const [openMenuFor, setOpenMenuFor] = useState(null);
 
@@ -118,7 +120,9 @@ export default function TVHost() {
         <h1 className="brand display-font">Ceyon's Super Spiffy Trivia</h1>
         <div className="tv-room-meta">
           {playing
-            ? `Round ${Math.max(1, room.completedNonTrashed)} of ${room.config.rounds}`
+            ? (room.currentRound?.isPractice
+                ? <span className="practice-badge">📚 Practice round</span>
+                : `Round ${Math.max(1, room.completedNonTrashed)} of ${room.config.rounds}`)
             : `${room.config.rounds} rounds · ${room.isPublic ? 'public' : 'private'}`}
         </div>
       </header>
@@ -256,6 +260,10 @@ export default function TVHost() {
         <HostControls room={room} />
         <div className="tv-footer-row">
           <HostAudioControls />
+          <button className="pair-btn" onClick={() => setShowRules(true)}>
+            <BookOpen size={16} style={{ marginRight: '0.4em', verticalAlign: '-3px' }} />
+            Rules
+          </button>
           {remoteUrl && (
             <button className="pair-btn" onClick={() => setShowPairing((s) => !s)}>
               <Smartphone size={16} style={{ marginRight: '0.4em', verticalAlign: '-3px' }} />
@@ -264,6 +272,8 @@ export default function TVHost() {
           )}
         </div>
       </footer>
+
+      <RulesOverlay open={showRules} onClose={() => setShowRules(false)} />
 
       {showPairing && remoteUrl && (
         <div className="pair-overlay" onClick={() => setShowPairing(false)}>
